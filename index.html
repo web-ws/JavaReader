@@ -12,12 +12,11 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/share.min.css">
 
   <!-- 支持 LaTex 语言 -->
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/custom.css">
 
   <!-- 自定义特色样式：by myself -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/me.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/vue.css">
 
   <style>
     /*begin侧边栏*/
@@ -42,7 +41,7 @@
 
     aside.sidebar ul li a {
       line-height: 35px;
-      font-size: 14px;
+      font-size: 15px;
       padding: 3px 0 3px 22px;
     }
 
@@ -70,7 +69,7 @@
       background: rgb(66, 185, 131);
       color:#ffffff;
       padding:  7px  10px;
-      border-radius:5px;
+      border-radius: 5px;
       box-shadow: 1px 1px 3px black;
     }
 
@@ -81,56 +80,57 @@
 
     .markdown-section p.tip,
     .markdown-section tr:nth-child(1n) {
-      font-size: 16px !important;
+      font-size: 15px !important;
     }
 
     .markdown-section h1 {
       margin: 3rem 0 2rem 0;
-      font-size: 2em;
+      font-size: 1.8em;
     }
 
     .markdown-section h2 {
       margin: 2rem 0 1rem;
-      font-size: 1.8em;
+      font-size: 1.6em;
     }
 
     .markdown-section h3 {
       margin: 2rem 0 1rem;
-      font-size: 1.6em;
+      font-size: 1.4em;
     }
 
     .markdown-section h4 {
       margin: 2rem 0 1rem;
-      font-size: 1.4em;
+      font-size: 1.2em;
     }
 
     .markdown-section h5 {
       margin: 2rem 0 1rem;
-      font-size: 1.2em;
+      font-size: 1.1em;
     }
 
-    .markdown-section h6 {
-      margin: 2rem 0 1rem;
-      font-size: 1.0em;
+    .markdown-section p {
+      font-size: 15px !important;
     }
 
+    .markdown-section code {
+      font-size: 0.9em !important;
+    }
+    /*圆角边框*/
     img,pre {
-      border-radius: 5px;
+      border-radius: 15px;
     }
 
     /*添加代码块复制按钮样式*/
     .docsify-copy-code-button {
       background: #00a1d6 !important;
       color: #FFFFFF !important;
-      font-size: 14px !important;
+      font-size: 15px !important;
+      border-radius: .3em;
     }
 
     ::after{
       color: #9da2fd !important;
-      font-size: 14px !important;
-    }
-    .markdown-section>p {
-      font-size: 14px !important;
+      font-size: 15px !important;
     }
 
   </style>
@@ -203,27 +203,27 @@
     }
   </script>
   <!-- docsify插件 -->
-  <script src="//cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify.min.js"></script>
   <!-- 搜索功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/search.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/zoom-image.min.js"></script>
   <!-- 图片缩放 -->
-  <script src="//unpkg.com/docsify/lib/plugins/zoom-image.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/zoom-image.js"></script>
   <!-- 支持 DOT 语言 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/viz.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/viz.js"></script>
   <!-- 支持 LaTex 语言 -->
-  <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify/docsify-katex.js"></script>
 
   <!-- 解析emoji -->
-  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
   <!-- 复制剪贴板 -->
-  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify/docsify-copy-code.min.js"></script>
   <!-- 页脚功能 -->
-  <script src="//unpkg.com/docsify-footer-enh/dist/docsify-footer-enh.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify/docsify-footer-enh.min.js"></script>
   <!-- 字数统计 -->
-  <script src="//unpkg.com/docsify-count/dist/countable.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/countable.js"></script>
   <!-- mouse click -->
-  <script src="//cdn.jsdelivr.net/gh/jerryc127/butterfly_cdn@2.1.0/js/click_heart.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/click_heart.js"></script>
 <!-- 访问量统计 (随机数) -->
   <!--
   <script async src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/busuanzi.pure.mini.js"></script>
@@ -245,8 +245,8 @@
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-markdown.js"></script>
 
   <!-- 回到顶部功能 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/jquery.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/jquery.goup.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/jquery.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/jquery.goup.js"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       $.goup({
