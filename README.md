@@ -13,11 +13,11 @@
 ## ☕️ 1.1 Java
 - [Java 基础篇](/01编程语言/Java/Java基础篇.md)
 
-- [Java集合篇](!/01编程语言/Java/Java集合篇.md)
+- [Java集合篇](/01编程语言/Java/Java集合篇.md)
 
-- [Java并发编程](!/01编程语言/Java/Java并发编程.md)
+- [Java并发编程](/01编程语言/Java/Java并发编程.md)
 
-- [Java网络编程](!/01编程语言/Java/Java网络编程.md)
+- [Java网络编程](/01编程语言/Java/Java网络编程.md)
 
 - [JVM虚拟机](/01编程语言/Java/JVM虚拟机.md)
 
