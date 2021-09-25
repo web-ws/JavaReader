@@ -13,11 +13,11 @@
 
   <!-- 支持 LaTex 语言 -->
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css" />
-  <link rel="stylesheet" href="https://wugenqiang.js.org/src/css/iconfont.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/custom.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/custom.css">
 
   <!-- 自定义特色样式：by myself -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wugenqiang/NoteBook@master/plugin/css/me.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/me.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/vue.css">
 
   <style>
     /*begin侧边栏*/
@@ -69,10 +69,11 @@
       display:inline-block;
       background: rgb(66, 185, 131);
       color:#ffffff;
-      padding:  10px  16px;
+      padding:  7px  10px;
       border-radius:5px;
       box-shadow: 1px 1px 3px black;
     }
+
     /* 代码块背景 */
     p code{
       background-color: rgb(255, 255, 255) !important;
@@ -85,11 +86,34 @@
 
     .markdown-section h1 {
       margin: 3rem 0 2rem 0;
+      font-size: 2em;
     }
 
     .markdown-section h2 {
       margin: 2rem 0 1rem;
+      font-size: 1.8em;
     }
+
+    .markdown-section h3 {
+      margin: 2rem 0 1rem;
+      font-size: 1.6em;
+    }
+
+    .markdown-section h4 {
+      margin: 2rem 0 1rem;
+      font-size: 1.4em;
+    }
+
+    .markdown-section h5 {
+      margin: 2rem 0 1rem;
+      font-size: 1.2em;
+    }
+
+    .markdown-section h6 {
+      margin: 2rem 0 1rem;
+      font-size: 1.0em;
+    }
+
     img,pre {
       border-radius: 5px;
     }
@@ -106,10 +130,11 @@
       font-size: 13px !important;
     }
     .markdown-section>p {
-      font-size: 16px !important;
+      font-size: 14px !important;
     }
 
   </style>
+
 </head>
 
 <body>
@@ -176,15 +201,13 @@
       },
     }
   </script>
-  <!-- Docsify v4
+  <!-- docsify插件 -->
   <script src="//cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/docsify.min.js"></script>
-  -->
-
-  <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
   <!-- 搜索功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/search.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/zoom-image.min.js"></script>
-
+  <!-- 图片缩放 -->
+  <script src="//unpkg.com/docsify/lib/plugins/zoom-image.js"></script>
   <!-- 支持 DOT 语言 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/viz.js"></script>
   <!-- 支持 LaTex 语言 -->
