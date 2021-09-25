@@ -6,7 +6,7 @@
 
 点击+号，选择“New respository“，输入仓库的名称”JavaReader“，输入有关仓库的描述“✍记录Java相关的知识“素养””，点击“Create Respository”
 
-![image-20210925132038287](https://i.loli.net/2021/09/25/mYpLePK4EQOGUx6.png)
+![image-20210925132038287](https://i.loli.net/2021/09/25/TG5uf1k3stJhRVa.png)
 
 ![image-20210925132408232](https://i.loli.net/2021/09/25/kCp2ODcVmibdJ73.png)
 
@@ -24,7 +24,7 @@ git remote add origin git@github.com:web-ws/JavaReader.git # 建立本地仓库�
 git push -u origin master # 提交修改后的内容到远程仓库
 ```
 
-![image-20210925133205566](https://i.loli.net/2021/09/25/AVtUqlKJhIyQvo3.png)
+![image-20210925133205566](https://i.loli.net/2021/09/25/S1eoMupvlFLkAcU.png)
 
 ## 1.2 下载docsify
 
@@ -53,7 +53,7 @@ docsify init ./docs
 - `index.html` 入口文件
 - `README.md` 会做为主页内容渲染
 
-![image-20210925134330136](https://i.loli.net/2021/09/25/Xzhtq3FQbjCagSf.png)
+![image-20210925134330136](https://i.loli.net/2021/09/25/ftAmHv129wKu4QY.png)
 
 ## 2.4 本地预览网站
 
@@ -63,7 +63,7 @@ docsify init ./docs
 docsify serve docs
 ```
 
-![image-20210925134631671](https://i.loli.net/2021/09/25/2DGyFKeSintWqjE.png)
+![image-20210925134631671](https://i.loli.net/2021/09/25/FYlAmDwugrGUOoH.png)
 
 
 
