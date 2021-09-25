@@ -19,7 +19,7 @@
 
 - [Java网络编程](!/01编程语言/Java/Java网络编程.md)
 
-- [JVM虚拟机](!/01编程语言/Java/JVM虚拟机.md)
+- [JVM虚拟机](/01编程语言/Java/JVM虚拟机.md)
 
 
 
