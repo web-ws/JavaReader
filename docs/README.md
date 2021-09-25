@@ -1,69 +1,70 @@
-# 1. 准备工作
+# 🎨 0. 前言
 
-## 1.1 创建远程仓库
+<b>说明</b>：作为个人知识储备，资料来源网络和个人整理，有涉及到侵犯他人版权问题，欢迎指出[JavaReader](!https://github.com/web-ws/JavaReader)，本人及时更正错误。
 
-在github上按照如下图操作，创建远程仓库
+* ⏳  爱分享，爱生活，保持初心，勿忘行善！
+* ✨  水滴石穿，勤能补拙，相信众人的点滴之流也能汇聚成海！
+* 🧡  祝君心想事成，早日变成强大的男人！
 
-点击+号，选择“New respository“，输入仓库的名称”JavaReader“，输入有关仓库的描述“✍记录Java相关的知识“素养””，点击“Create Respository”
 
-![image-20210925132038287](https://i.loli.net/2021/09/25/TG5uf1k3stJhRVa.png)
 
-![image-20210925132408232](https://i.loli.net/2021/09/25/kCp2ODcVmibdJ73.png)
+# 🍵 1. 编程语言
 
-## 1.2 创建本地仓库
+## ☕️ 1.1 Java
+- [Java 基础篇](/01编程语言/Java/Java基础篇.md)
 
-在本地某个目录下创建与远程仓库相同名字的仓库，并作初始化
+- [Java集合篇](!/01编程语言/Java/Java集合篇.md)
 
-```shell
-echo "# JavaReader" >> README.md
-git init
-git config --global init.defaultBranch master # 配置初始化默认分支的名称为master
-git add README.md  # 预提交指定的文件
-git commit -m "first commit" # 正式提交文件，并且做备注
-git remote add origin git@github.com:web-ws/JavaReader.git # 建立本地仓库与远程仓库的关系
-git push -u origin master # 提交修改后的内容到远程仓库
-```
+- [Java并发编程](!/01编程语言/Java/Java并发编程.md)
 
-![image-20210925133205566](https://i.loli.net/2021/09/25/S1eoMupvlFLkAcU.png)
+- [Java网络编程](!/01编程语言/Java/Java网络编程.md)
 
-## 1.2 下载docsify
+- [JVM虚拟机](!/01编程语言/Java/JVM虚拟机.md)
 
-# 2. docsify入门
 
-## 2.1 安装docsify工具
 
-推荐全局安装 `docsify-cli` 工具，可以方便地创建及在本地预览生成的文档。
+## 🐍 1.2 Python
 
-```bash
-npm i docsify-cli -g
-```
+## 🥭 1.3 Golang
 
-## 2.2 初始化项目
+## 📌 1.4 Shell
 
-如果想在项目的 `./docs` 目录里写文档，直接通过 `init` 初始化项目。
 
-```bash
-docsify init ./docs
-```
 
-## 2.3 编写文档
+# 📜 2. 数据库
 
-初始化成功后，可以看到 `./docs` 目录下创建的几个文件
+## 📜 2.1 Oracle
+## 📜 2.2 Mysql
+## 📜 2.3 Redis
 
-- `index.html` 入口文件
-- `README.md` 会做为主页内容渲染
 
-![image-20210925134330136](https://i.loli.net/2021/09/25/ftAmHv129wKu4QY.png)
 
-## 2.4 本地预览网站
 
-通过运行 `docsify serve` 启动一个本地服务器，可以方便地实时预览效果。默认访问地址 [http://localhost:3000](http://localhost:3000/) 。
+# 🚀 3. 计算机基础
 
-```bash
-docsify serve docs
-```
+## 🐼 3.1 操作系统
+## 🥉 3.2 网络
+## ⏰ 3.3 计算机组成原理
 
-![image-20210925134631671](https://i.loli.net/2021/09/25/FYlAmDwugrGUOoH.png)
+
+
+# ⏳ 4. 算法与数据结构
+## ⏳ 4.1 数据结构
+## ⏳ 4.2 算法
+
+
+
+# 💭 5. 架构设计
+## 💭 5.1 设计模式
+## 💭 5.2 设计原则
+
+
+
+# 🔨 10. 实用工具
+
+## 🔨 10.1 IDEA
+
+## 🔨 10.2 Typora
 
 
 
