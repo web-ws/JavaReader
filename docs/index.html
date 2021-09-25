@@ -10,9 +10,101 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/social-share.js/1.0.16/css/share.min.css">
+  <style>
+    /*begin侧边栏*/
+    .sidebar {
+      padding-top: 6px;
+    }
+
+    aside.sidebar ul li {
+      margin: 0;
+      position: relative;
+    }
+
+    aside.sidebar ul li ul {
+      margin: 6px 0;
+    }
+
+    aside.sidebar ul li p {
+      padding-left: 22px;
+      font-size: 18px;
+      font-weight: normal;
+    }
+
+    aside.sidebar ul li a {
+      line-height: 35px;
+      font-size: 14px;
+      padding: 3px 0 3px 22px;
+    }
+
+    aside.sidebar ul li.active > a {
+      font-size: 16px !important;
+    }
+
+    aside.sidebar ul li.active > a:before {
+      content: '' !important;
+      position: absolute !important;
+      margin: 0 !important;
+      width: 10px !important;
+      height: 10px !important;
+      top: 15px !important;
+      left: 0px !important;
+      border-radius: 50% !important;
+      background-color: #fed24a !important;
+      box-shadow: 0 0 0 3px rgba(254, 210, 74, 0.4) !important;
+    }
+    /*end调侧边栏*/
+
+    /* 标题 */
+    h1 span{
+      display:inline-block;
+      background: rgb(66, 185, 131);
+      color:#ffffff;
+      padding:  10px  16px;
+      border-radius:5px;
+      box-shadow: 1px 1px 3px black;
+    }
+    /* 代码块背景 */
+    p code{
+      background-color: rgb(255, 255, 255) !important;
+    }
+
+    .markdown-section p.tip,
+    .markdown-section tr:nth-child(1n) {
+      font-size: 16px !important;
+    }
+
+    .markdown-section h1 {
+      margin: 3rem 0 2rem 0;
+    }
+
+    .markdown-section h2 {
+      margin: 2rem 0 1rem;
+    }
+    img,pre {
+      border-radius: 5px;
+    }
+
+    /*添加代码块复制按钮样式*/
+    .docsify-copy-code-button {
+      background: #00a1d6 !important;
+      color: #FFFFFF !important;
+      font-size: 13px !important;
+    }
+
+    ::after{
+      color: #9da2fd !important;
+      font-size: 13px !important;
+    }
+    .markdown-section>p {
+      font-size: 16px !important;
+    }
+
+  </style>
 </head>
+
 <body>
-  <div id="app">加载中，欢迎来到JavaReader...</div>
+  <div id="app">🏃‍🏃‍🏃‍💨 加载中，欢迎来到JavaReader...</div>
   <script>
     window.$docsify = {
       // 页面标题
@@ -27,7 +119,7 @@
       // 封面
       coverpage: true,
       // 封面和内容单独显示
-      onlyCover: false,
+      onlyCover: true,
       externalLinkTarget: '_blank', //外链打开方式：_blank表示在新标签页中打开
       // 编辑当前文档按钮
       formatUpdated: '{YYYY}/{MM}/{DD} {HH}:{mm}',
@@ -58,7 +150,6 @@
         paths: 'auto',
         placeholder: '🔍 搜索全文',
         noData: '😒 找不到结果',
-        // Headline depth, 1 - 6
         depth: 6,
         maxAge: 86400000, // 过期时间，单位毫秒，默认一天
       },
@@ -90,33 +181,35 @@
   <script src="https://cdn.jsdelivr.net/gh/wugenqiang/NoteBook@master/plugin/viz.js"></script>
   <!-- 支持 LaTex 语言 -->
   <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
+  <!-- 访问量统计 (随机数) -->
+  <script async src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/busuanzi.pure.mini.js"></script>
 
   <!-- 代码块样式优化-->
-  <script src="plugins/prism/prism-java.js"></script>
-  <script src="plugins/prism/prism-python.js"></script>
-  <script src="plugins/prism/prism-c.js"></script>
-  <script src="plugins/prism/prism-javascript.js"></script>
-  <script src="plugins/prism/prism-css.js"></script>
-  <script src="plugins/prism/prism-sql.js"></script>
-  <script src="plugins/prism/prism-yaml.js"></script>
-  <script src="plugins/prism/prism-docker.js"></script>
-  <script src="plugins/prism/prism-bash.min.js"></script>
-  <script src="plugins/prism/prism-json.js"></script>
-  <script src="plugins/prism/prism-latex.js"></script>
-  <script src="plugins/prism/prism-yaml.js"></script>
-  <script src="plugins/prism/prism-scala.min.js"></script>
-  <script src="plugins/prism/prism-markdown.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-java.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-python.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-c.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-javascript.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-css.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-sql.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-yaml.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-docker.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-json.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-latex.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-yaml.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-scala.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-markdown.js"></script>
 
   <!-- 回到顶部功能 -->
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jquery-goup@1.1.3/src/jquery.goup.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/jquery.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/jquery.goup.js"></script>
   <script type="text/javascript">
     $(document).ready(function () {
       $.goup({
         trigger: 100,
         bottomOffset: 52,
         locationOffset: 25,
-        title: 'TOP',
+        //title: 'TOP',
         titleAsText: true
       });
     });
