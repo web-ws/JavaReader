@@ -142,7 +142,7 @@
       // 页面页脚
       footer: {
         copy: '<span>Copyright &copy; 2020 - 2021</span>',
-        copy: '<span id="sitetime">test</span> <br/>',
+        //copy: '<span id="sitetime"></span> <br/>',
         auth: '<a href="https://web-ws.github.io/JavaReader/" target="_blank">🏷️ GitHub NoteBook</a>',
         pre: '<hr/>',
         style: 'text-align: left;',
@@ -184,8 +184,9 @@
   <!-- 支持 LaTex 语言 -->
   <script src="//cdn.jsdelivr.net/npm/docsify-katex@latest/dist/docsify-katex.js"></script>
   <!-- 访问量统计 (随机数) -->
+  <!--
   <script async src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/js/busuanzi.pure.mini.js"></script>
-
+  -->
   <!-- 代码块样式优化-->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-java.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/prism/prism-python.js"></script>
@@ -261,9 +262,11 @@
       var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours - diffMinutes * minutes) / seconds);
       document.getElementById("sitetime").innerHTML = " 本站已安全运行 " + diffYears + " 年 " + diffDays + " 天 " + diffHours + " 小时 " + diffMinutes + " 分 " + diffSeconds + " 秒 ";
     };
+    /*
     window.onload = function() {
       siteTime();
     }
+    */
   </script>
 
 </body>
