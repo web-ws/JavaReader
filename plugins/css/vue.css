@@ -496,7 +496,6 @@ section.cover {
   background-repeat: no-repeat;
   background-size: cover;
   height: 100vh;
-  width: 100vw;
   display: none;
 }
 section.cover.show {
@@ -514,6 +513,7 @@ section.cover .cover-main {
   flex: 1;
   margin: -20px 16px 0;
   text-align: center;
+  z-index: 1;
 }
 section.cover a {
   color: inherit;
