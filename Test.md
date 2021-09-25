@@ -39,12 +39,7 @@
 
 # 样式
 ## 字体颜色
-> 蓝色
-$\color{blue}{蓝色}$
-> 红色
-$\color{red}{红色}$
-> red
-$\color{red}{red}$
+
 
 <font color="red">红色</font>
 <font color="Darkorange">Darkorange橙色</font>
