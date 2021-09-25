@@ -78,4 +78,25 @@ docsify serve docs
 
 参考：https://notebook.js.org/#/Project/Docsify/docsifyNotes
 
+## 3.1 笔记标题链接
+
+## 3.2 右上角的GitHub图标
+
+## 3.3 导航栏
+
+## 3.4 全文搜索框
+
+## 3.5 回到顶部
+
+## 3.6 代码块的圆角边框
+
+## 3.7 文章标题的大小h1-h6
+
+## 3.8 文章字体颜色和强调方式
+
+## 3.9 组件整理（css-js...）
+
+## 3.10 
+
+
 

@@ -33,6 +33,7 @@
 
 # Markdown
 - [Markdown说明手册](https://markdown.com.cn/basic-syntax/)
+- [CDN-jsdelivr](https://www.jsdelivr.com/)
 
 # 图床网址
 - [SM.MS](https://sm.ms/home/)
@@ -40,12 +41,15 @@
 # 样式
 ## 字体颜色
 
-
 <font color="red">红色</font>
 <font color="Darkorange">Darkorange橙色</font>
 <font color="Green">绿色</font>
 <font color="ForestGreen">绿色</font>
 <br/>
+
+[markdown字体颜色](https://blog.csdn.net/liuhw4598/article/details/78279737)
+
+
 
 ## 强调
 注意这里需要修改强调`注意这里需要修改强调`注意这里需要修改强调
