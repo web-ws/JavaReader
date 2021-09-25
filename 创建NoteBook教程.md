@@ -50,8 +50,9 @@ docsify init ./docs
 
 初始化成功后，可以看到 `./docs` 目录下创建的几个文件
 
-- `index.html` 入口文件
-- `README.md` 会做为主页内容渲染
+- `index.html` 作为入口文件
+- `README.md` 作为主页内容渲染
+- $\color{red}{.nojekyll 用于阻止 GitHub Pages 会忽略掉下划线开头的文件}$
 
 ![image-20210925134330136](https://i.loli.net/2021/09/25/Xzhtq3FQbjCagSf.png)
 
@@ -65,5 +66,16 @@ docsify serve docs
 
 ![image-20210925134631671](https://i.loli.net/2021/09/25/2DGyFKeSintWqjE.png)
 
+## 2.5 GitPages
+
+默认的/root目录作为服务启动的目录
+
+所以需要把上述三个文件一并迁移至项目的根目录下，才能作为根目录启动，正常显示。
+
+![image-20210925211449060](https://i.loli.net/2021/09/25/kZP5Msdp6gr4RvX.png)
+
+# 3. 页面的内容编辑
+
+参考：https://notebook.js.org/#/Project/Docsify/docsifyNotes
 
 
