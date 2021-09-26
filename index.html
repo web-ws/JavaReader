@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WelCome to JavaReader </title>
+  <title>📘 WelCome to JavaReader </title>
   <!--- 网站图标 -->
   <link rel="shortcut icon" href="plugin\images\favicon.ico">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
@@ -19,6 +19,17 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/me.css">
 
   <style>
+    .app-nav{
+      position: fixed;
+      margin: 0;
+      /*padding: 10px 50px 10px 0;*/
+      padding: 10px 0 10px 0;/*上、右、下、左*/
+      width: calc(100% - 325px);
+      background-color: #fff;
+      height: 55px;
+      border-bottom: 1px solid #eee;
+    }
+
     /*begin侧边栏*/
     .sidebar {
       padding-top: 6px;
@@ -78,6 +89,7 @@
       background-color: rgb(255, 255, 255) !important;
     }
 
+    /* markdown段落标题大小 */
     .markdown-section p.tip,
     .markdown-section tr:nth-child(1n) {
       font-size: 15px !important;
@@ -115,6 +127,7 @@
     .markdown-section code {
       font-size: 0.9em !important;
     }
+
     /*圆角边框*/
     img,pre {
       border-radius: 15px;
