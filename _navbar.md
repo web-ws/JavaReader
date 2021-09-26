@@ -17,5 +17,5 @@
   - [📜 2.3 Redis](/README?id=📜-23-redis)
 
 
-- [<span class="iconfont icon-csdn"></span> GitHub](https://github.com/web-ws/JavaReader)
+- [<span class="iconfont icon-csdn"></span> ](https://github.com/web-ws/JavaReader)
 

@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>📘 WelCome to JavaReader </title>
-  <!--- 网站图标 -->
-  <link rel="shortcut icon" href="plugin\images\favicon.ico">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
   <meta name="description" content="Description">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/vue.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/share.min.css">
 
@@ -19,6 +17,40 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader/plugins/css/me.css">
 
   <style>
+    /* 强调样式 */
+    .markdown-section strong {
+      color: rgb(239, 112, 96);
+    }
+
+    /* 导航栏 */
+    .app-nav{
+      position: fixed;
+      margin: 0;
+      /*padding: 10px 50px 10px 0;*/
+      padding: 10px 0 10px 0;/*上、右、下、左*/
+      width: calc(100% - 325px);
+      background-color: #fff;
+      height: 55px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .app-nav.no-badge {
+      margin-right: 0px;
+      padding-right: 25px;
+    }
+
+    .app-nav ul {
+      float: left;
+    }
+
+    .github-corner {
+      z-index: 999;
+    }
+    .github-corner svg {
+      width: 55px;
+      height: 55px;
+    }
+
     /*begin侧边栏*/
     .sidebar {
       padding-top: 6px;
@@ -143,9 +175,9 @@
   <div id="app">🏃‍🏃‍🏃‍💨 加载中，欢迎来到JavaReader...</div>
   <script>
     window.$docsify = {
-      // 页面标题
+      // 笔记本名称
       name: '<p>📘 JavaReader</p>',
-      // 页面标题链接
+      // 笔记本链接
       nameLink: 'https://github.com/web-ws/JavaReader',
       // github图标
       repo: 'web-ws/JavaReader',
