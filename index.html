@@ -174,11 +174,19 @@
 <body>
   <div id="app">🏃‍🏃‍🏃‍💨 加载中，欢迎来到JavaReader...</div>
   <script>
+    var nameLink;
+    if (location.host == "localhost:3000") {
+      nameLink = 'http://localhost:3000/#/README'
+    } else {
+      nameLink = 'https://web-ws.github.io/JavaReader/#/README'
+    }
+
     window.$docsify = {
       // 笔记本名称
       name: '<p>📘 JavaReader</p>',
       // 笔记本链接
-      nameLink: 'https://web-ws.github.io/JavaReader/#/README',
+      //nameLink: 'https://web-ws.github.io/JavaReader/#/README',
+      nameLink: nameLink,
       // github图标
       repo: 'web-ws/JavaReader',
       // 切换页面后，跳转到顶部页面
