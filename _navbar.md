@@ -1,6 +1,6 @@
 - [<span class="iconfont icon-icon_fabu"></span> 首页](/README.md)
 
-  - [☕️ 1.1 Java](/README?id=☕️-11-java)
+  - [☕️ 1.1 Java](/README?id=🍵-1-编程语言)
 
   - [🐍 1.2 Python](/README?id=🐍-12-python)
 

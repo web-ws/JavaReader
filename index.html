@@ -8,6 +8,7 @@
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/vue.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/share.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css">
   <!-- 自定义特色样式：by myself -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/me.css">
 
@@ -15,27 +16,6 @@
     /* 强调样式 */
     .markdown-section strong {
       color: rgb(239, 112, 96);
-    }
-
-    /* 导航栏 */
-    .app-nav {
-      position: fixed;
-      margin: 0;
-      /*padding: 10px 50px 10px 0;*/
-      padding: 10px 0 10px 0;/*上、右、下、左*/
-      width: calc(100% - 325px);
-      background-color: #fff;
-      height: 55px;
-      border-bottom: 1px solid #eee;
-    }
-
-    .app-nav.no-badge {
-      margin-right: 0px;
-      padding-right: 25px;
-    }
-
-    .app-nav ul {
-      float: left;
     }
 
     .github-corner {
@@ -46,7 +26,7 @@
       height: 55px;
     }
 
-    /*begin侧边栏*/
+    /* begin侧边栏 */
     .sidebar {
       padding-top: 6px;
     }
@@ -88,7 +68,7 @@
       background-color: #fed24a !important;
       box-shadow: 0 0 0 3px rgba(254, 210, 74, 0.4) !important;
     }
-    /*end调侧边栏*/
+    /* end调侧边栏 */
 
     /* 标题 */
     h1 span{
@@ -148,16 +128,13 @@
       margin: 1em 0;
     }
 
-    .markdown-section pre {
-      overflow: 'hidden';
-    }
-
-    /*圆角边框*/
+    /* 圆角边框 */
     img,pre {
       border-radius: 10px;
     }
 
-    /*添加代码块复制按钮样式*/
+    /* 添加代码块复制按钮样式 */
+
     .docsify-copy-code-button {
       background: #00a1d6 !important;
       color: #FFFFFF !important;
@@ -170,11 +147,37 @@
       font-size: 15px !important;
     }
 
+    #docsify-darklight-theme {
+      top: 25px;
+      right: -20px;
+    }
+
   </style>
 
 </head>
 
 <body>
+  <nav>
+    <ul>
+      <li>
+        分类
+        <ul>
+          <li><a href="#/README?id=🍵-1-编程语言">编程语言</a></li>
+          <li><a href="#/README?id=📜-2-数据库">数据库</a></li>
+          <li><a href="#/README?id=🐼-3-常用框架">常用框架</a></li>
+          <li><a href="#/README?id=💭-7-架构设计">架构设计</a></li>
+          <li><a href="#/README?id=🔨-10-实用工具">实用工具</a></li>
+        </ul>
+      </li>
+      <li>
+        页面
+        <ul>
+          <li><a href="#">封面</a></li>
+          <li><a href="#/README">首页</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
   <div id="app">🏃‍🏃‍🏃‍💨 加载中，欢迎来到JavaReader...</div>
   <script>
     // 设置笔记的链接
@@ -201,19 +204,19 @@
       // 封面和内容单独显示
       onlyCover: true,
       // 是否加载导航栏
-      // loadNavbar: true,
+      //loadNavbar: true,
       // 在小屏幕上,导航栏与侧边栏合并
       mergeNavbar: true,
       notFoundPage: true,
       // 外链打开方式：_blank表示在新标签页中打开
       externalLinkTarget: '_blank',
       // 页签
-      pagination: {
-        previousText: "上一篇",
-        nextText: "下一篇",
-        crossChapter: true,
-        crossChapterText: true,
-      },
+      //pagination: {
+      //  previousText: "上一篇",
+      //  nextText: "下一篇",
+      //  crossChapter: true,
+      //  crossChapterText: true,
+      //},
       // 编辑当前文档按钮
       formatUpdated: '{YYYY}/{MM}/{DD} {HH}:{mm}',
       plugins: [
@@ -273,30 +276,26 @@
   </script>
   <!-- docsify插件 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify.min.js"></script>
-  <!-- 分页 -->
+  <!-- 分页
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-pagination.min.js"></script>
+  -->
   <!-- 复制剪贴板 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-copy-code.min.js"></script>
   <!-- 页脚功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-footer-enh.min.js"></script>
-
   <!-- 搜索功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/search.min.js"></script>
   <!-- 图片缩放 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/zoom-image.min.js"></script>
-  <!-- 支持 DOT 语言 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/viz.js"></script>
-  <!-- 支持 LaTex 语言 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-katex.js"></script>
   <!-- 字数统计 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/countable.js"></script>
   <!-- 鼠标点击 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/click_heart.js"></script>
-  <!-- 白夜切换 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/index.js"></script>
   <!-- 解析emoji -->
   <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
-
+  <!-- 白夜切换 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"></script>
   <!-- 代码块样式优化-->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-java.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-python.js"></script>
@@ -312,7 +311,6 @@
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-yaml.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-scala.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-markdown.js"></script>
-
   <!-- 回到顶部功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/jquery.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/jquery.goup.js"></script>
@@ -328,14 +326,18 @@
 
     });
   </script>
-
   <!-- 实现离线化 -->
   <script>
     if (typeof navigator.serviceWorker !== 'undefined') {
       navigator.serviceWorker.register('sw.js')
     }
-  </script>
-
+    /**
+    window.onload = function () {
+      if (location.href.endsWith("#/")) {
+        document.getElementsByClassName('app-nav')[0].style.display = 'none';
+      }
+    }
+    **/
   </script>
 
 </body>
