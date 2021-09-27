@@ -16,7 +16,7 @@
 
 - [Java 基础篇1](/01编程语言/Java/Java基础篇1.md)
 - [Java 基础篇2](/01编程语言/Java/Java基础篇2.md)
-- [Java集合篇](/01编程语言/Java/Java集合篇.md)
+- [Java集合容器篇](/01编程语言/Java/Java集合容器篇.md)
 - [Java并发编程](/01编程语言/Java/Java并发编程.md)
 - [Java网络编程](/01编程语言/Java/Java网络编程.md)
 - [Java异常处理](/01编程语言/Java/Java异常处理.md)
