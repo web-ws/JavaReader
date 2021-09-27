@@ -57,13 +57,13 @@ List接口的实现类主要有：ArrayList、LinkedList、Stack以及Vector等
 
 Java 容器分为 Collection 和 Map 两大类，Collection集合的子接口有Set、List、Queue三种子接口。我们比较常用的是Set、List，Map接口不是collection的子接口。
 
-**Collection集合主要有List和Set两大接口**
+> Collection集合主要有List和Set两大接口
 
 List：一个有序（元素存入集合的顺序和取出的顺序一致）容器，元素可以重复，可以插入多个null元素，元素都有索引。常用的实现类有 ArrayList、LinkedList 和 Vector。
 
 Set：一个无序（存入和取出顺序有可能不一致）容器，不可以存储重复元素，只允许存入一个null元素，必须保证元素唯一性。Set 接口常用实现类是 HashSet、LinkedHashSet 以及 TreeSet。
 
-**Map是一个键值对集合，存储键、值和之间的映射。**
+>  Map是一个键值对集合，存储键、值和之间的映射。
 
 Key无序，唯一；value 不要求有序，允许重复。Map没有继承于Collection接口，从Map集合中检索元素时，只要给出键对象，就会返回对应的值对象。
 
@@ -71,58 +71,63 @@ Map 的常用实现类：HashMap、TreeMap、HashTable、LinkedHashMap、Concurr
 
 ## 1.7 集合框架底层数据结构
 
-Collection
+### 1.7.1 Collection
 
-List
+#### 1.7.1.1 List
 Arraylist： Object数组
 Vector： Object数组
 LinkedList： 双向循环链表
-Set
+
+#### 1.7.1.2 Set
 HashSet（无序，唯一）：基于 HashMap 实现的，底层采用 HashMap 来保存元素
 LinkedHashSet： LinkedHashSet 继承与 HashSet，并且其内部是通过 LinkedHashMap 来实现的。有点类似于我们之前说的LinkedHashMap 其内部是基于 Hashmap 实现一样，不过还是有一点点区别的。
 TreeSet（有序，唯一）： 红黑树(自平衡的排序二叉树。)
-Map
 
-HashMap： JDK1.8之前HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的（“拉链法”解决冲突）.JDK1.8以后在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间
+### 1.7.2 Map
+
+HashMap： JDK1.8之前HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的（“拉链法”解决冲突）.JDK1.8以后在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。
 LinkedHashMap：LinkedHashMap 继承自 HashMap，所以它的底层仍然是基于拉链式散列结构即由数组和链表或红黑树组成。另外，LinkedHashMap 在上面结构的基础上，增加了一条双向链表，使得上面的结构可以保持键值对的插入顺序。同时通过对链表进行相应的操作，实现了访问顺序相关逻辑。
 HashTable： 数组+链表组成的，数组是 HashMap 的主体，链表则是主要为了解决哈希冲突而存在的
 TreeMap： 红黑树（自平衡的排序二叉树）
+
 ## 1.8 哪些集合类是线程安全的？
-vector：就比arraylist多了个同步化机制（线程安全），因为效率较低，现在已经不太建议使用。在web应用中，特别是前台页面，往往效率（页面响应速度）是优先考虑的。
+`vector：就比arraylist多了个同步化机制（线程安全），因为效率较低，现在已经不太建议使用。`在web应用中，特别是前台页面，往往效率（页面响应速度）是优先考虑的。
 statck：堆栈类，先进后出。
 hashtable：就比hashmap多了个线程安全。
 enumeration：枚举，相当于迭代器。
+
 ## 1.9 Java集合的快速失败机制 “fail-fast”？
 是java集合的一种错误检测机制，当多个线程对集合进行结构上的改变的操作时，有可能会产生 fail-fast 机制。
 
-例如：假设存在两个线程（线程1、线程2），线程1通过Iterator在遍历集合A中的元素，在某个时候线程2修改了集合A的结构（是结构上面的修改，而不是简单的修改集合元素的内容），那么这个时候程序就会抛出 ConcurrentModificationException 异常，从而产生fail-fast机制。
+例如：假设存在两个线程（线程1、线程2），线程1通过Iterator在遍历集合A中的元素，在某个时候线程2修改了集合A的结构（而不是简单的修改集合元素的内容），那么这个时候程序就会抛出 `ConcurrentModificationException 异常`，从而产生fail-fast机制。
 
-原因：迭代器在遍历时直接访问集合中的内容，并且在遍历过程中使用一个 modCount 变量。集合在被遍历期间如果内容发生变化，就会改变modCount的值。每当迭代器使用hashNext()/next()遍历下一个元素之前，都会检测modCount变量是否为expectedmodCount值，是的话就返回遍历；否则抛出异常，终止遍历。
+原因：迭代器在遍历时直接访问集合中的内容，并且在遍历过程中使用一个 modCount 变量。集合在被遍历期间如果内容发生变化，就会改变modCount的值。每当迭代器使用hashNext()/next()遍历下一个元素之前，都会检测`modCount变量是否为expectedmodCount值`，是的话就返回遍历；否则抛出异常，终止遍历。
 
-解决办法：
+> 解决办法：
 
 在遍历过程中，所有涉及到改变modCount值得地方全部加上synchronized。
 
 使用CopyOnWriteArrayList来替换ArrayList
 
 ## 1.10 怎么确保一个集合不能被修改？
-可以使用 Collections. unmodifiableCollection(Collection c) 方法来创建一个只读集合，这样改变集合的任何操作都会抛出 Java. lang. UnsupportedOperationException 异常。
+可以使用`Collections.unmodifiableCollection(Collection c) `方法来创建一个只读集合，这样改变集合的任何操作都会抛出 Java.lang.UnsupportedOperationException 异常。
 
 示例代码如下：
 ```java
 List<String> list = new ArrayList<>();
-list. add("x");
-Collection<String> clist = Collections. unmodifiableCollection(list);
-clist. add("y"); // 运行时此行报错
-System. out. println(list. size());
+list.add("x");
+Collection<String> clist = Collections.unmodifiableCollection(list);
+clist.add("y"); // 运行时此行报错
+System.out.println(list.size());
 ```
 # 2. Collection接口
 ## 2.1 List接口
-迭代器 Iterator 是什么？
+### 2.1.1 迭代器 Iterator 是什么？
 Iterator 接口提供遍历任何 Collection 的接口。我们可以从一个 Collection 中使用迭代器方法来获取迭代器实例。迭代器取代了 Java 集合框架中的 Enumeration，迭代器允许调用者在迭代过程中移除元素。
 
-Iterator 怎么使用？有什么特点？
+### 2.1.2 Iterator 怎么使用？有什么特点？
 Iterator 使用代码如下：
+
 ```java
 List<String> list = new ArrayList<>();
 Iterator<String> it = list. iterator();
@@ -134,8 +139,9 @@ while(it. hasNext()){
 
 Iterator 的特点是只能单向遍历，但是更加安全，因为它可以确保，在当前遍历的集合元素被更改的时候，就会抛出 ConcurrentModificationException 异常。
 
-如何边遍历边移除 Collection 中的元素？
-边遍历边修改 Collection 的唯一正确方式是使用 Iterator.remove() 方法，如下：
+### 2.1.3 如何边遍历边移除 Collection 中的元素？
+边遍历边修改 Collection 的唯一正确方式是使用 `Iterator.remove() `方法，如下：
+
 ```java
 Iterator<Integer> it = list.iterator();
 while(it.hasNext()){
@@ -149,42 +155,44 @@ for(Integer i : list){
    list.remove(i)
 }
 ```
-运行以上错误代码会报 ConcurrentModificationException 异常。这是因为当使用 foreach(for(Integer i : list)) 语句时，会自动生成一个iterator 来遍历该 list，但同时该 list 正在被 Iterator.remove() 修改。Java 一般不允许一个线程在遍历 Collection 时另一个线程修改它。
+运行以上错误代码会报 ConcurrentModificationException 异常。这是因为当使用 foreach(for(Integer i : list)) 语句时，会自动生成一个iterator 来遍历该 list，但同时该 list 正在被 Iterator.remove() 修改。`Java 一般不允许一个线程在遍历 Collection 时另一个线程修改它。`
 
-Iterator 和 ListIterator 有什么区别？
+### 2.1.4 Iterator 和 ListIterator 有什么区别？
 Iterator 可以遍历 Set 和 List 集合，而 ListIterator 只能遍历 List。
 Iterator 只能单向遍历，而 ListIterator 可以双向遍历（向前/后遍历）。
 ListIterator 实现 Iterator 接口，然后添加了一些额外的功能，比如添加一个元素、替换一个元素、获取前面或后面元素的索引位置。
-遍历一个 List 有哪些不同的方式？每种方法的实现原理是什么？Java 中 List 遍历的最佳实践是什么？
-遍历方式有以下几种：
+### 2.1.5 遍历一个 List 有哪些不同的方式？每种方法的实现原理是什么？Java 中 List 遍历的最佳实践是什么？
+> 遍历方式有以下几种：
 
-for 循环遍历，基于计数器。在集合外部维护一个计数器，然后依次读取每一个位置的元素，当读取到最后一个元素后停止。
+- `for 循环遍历，基于计数器。`在集合外部维护一个计数器，然后依次读取每一个位置的元素，当读取到最后一个元素后停止。
 
-迭代器遍历，Iterator。Iterator 是面向对象的一个设计模式，目的是屏蔽不同数据集合的特点，统一遍历集合的接口。Java 在 Collections 中支持了 Iterator 模式。
+- `迭代器遍历，Iterator。`Iterator 是面向对象的一个设计模式，目的是屏蔽不同数据集合的特点，统一遍历集合的接口。Java 在 Collections 中支持了 Iterator 模式。
 
-foreach 循环遍历。foreach 内部也是采用了 Iterator 的方式实现，使用时不需要显式声明 Iterator 或计数器。优点是代码简洁，不易出错；缺点是只能做简单的遍历，不能在遍历过程中操作数据集合，例如删除、替换。
+- `foreach 循环遍历。`foreach 内部也是采用了 Iterator 的方式实现，使用时不需要显式声明 Iterator 或计数器。优点是代码简洁，不易出错；`缺点是只能做简单的遍历，不能在遍历过程中操作数据集合，例如删除、替换。`
 
-最佳实践：Java Collections 框架中提供了一个 RandomAccess 接口，用来标记 List 实现是否支持 Random Access。
+> 最佳实践：Java Collections 框架中提供了一个 RandomAccess 接口，用来标记 List 实现是否支持 Random Access。
 
 如果一个数据集合实现了该接口，就意味着它支持 Random Access，按位置读取元素的平均时间复杂度为 O(1)，如ArrayList。
 如果没有实现该接口，表示不支持 Random Access，如LinkedList。
-推荐的做法就是，支持 Random Access 的列表可用 for 循环遍历，否则建议用 Iterator 或 foreach 遍历。
+`推荐的做法就是，支持 Random Access 的列表可用 for 循环遍历，否则建议用 Iterator 或 foreach 遍历。`
 
-说一下 ArrayList 的优缺点
-ArrayList的优点如下：
+### 2.1.6 说一下 ArrayList 的优缺点
+>  ArrayList的优点如下：
 
 ArrayList 底层以数组实现，是一种随机访问模式。ArrayList 实现了 RandomAccess 接口，因此查找的时候非常快。
 ArrayList 在顺序添加一个元素的时候非常方便。
-ArrayList 的缺点如下：
+
+> ArrayList 的缺点如下： 
 
 删除元素的时候，需要做一次元素复制操作。如果要复制的元素很多，那么就会比较耗费性能。
 插入元素的时候，也需要做一次元素复制操作，缺点同上。
-ArrayList 比较适合顺序添加、随机访问的场景。
+`ArrayList 比较适合顺序添加、随机访问的场景。`
 
-如何实现数组和 List 之间的转换？
-数组转 List：使用 Arrays. asList(array) 进行转换。
-List 转数组：使用 List 自带的 toArray() 方法。
+### 2.1.7 如何实现数组和 List 之间的转换？
+数组转 List：使用 `Arrays. asList(array)` 进行转换。
+List 转数组：使用 `List实例对象的toArray()` 方法。
 代码示例：
+
 ```java
 // list to array
 List<String> list = new ArrayList<String>();
@@ -197,37 +205,38 @@ String[] array = new String[]{"123","456"};
 Arrays.asList(array);
 ```
 
-ArrayList 和 LinkedList 的区别是什么？
-数据结构实现：ArrayList 是动态数组的数据结构实现，而 LinkedList 是双向链表的数据结构实现。
-随机访问效率：ArrayList 比 LinkedList 在随机访问的时候效率要高，因为 LinkedList 是线性的数据存储方式，所以需要移动指针从前往后依次查找。
-增加和删除效率：在非首尾的增加和删除操作，LinkedList 要比 ArrayList 效率要高，因为 ArrayList 增删操作要影响数组内的其他数据的下标。
-内存空间占用：LinkedList 比 ArrayList 更占内存，因为 LinkedList 的节点除了存储数据，还存储了两个引用，一个指向前一个元素，一个指向后一个元素。
-线程安全：ArrayList 和 LinkedList 都是不同步的，也就是不保证线程安全；
-综合来说，在需要频繁读取集合中的元素时，更推荐使用 ArrayList，而在插入和删除操作较多时，更推荐使用 LinkedList。
+### 2.1.8 ArrayList 和 LinkedList 的区别是什么？
+`数据结构实现：`ArrayList 是动态数组的数据结构实现，而 LinkedList 是双向链表的数据结构实现。
+`随机访问效率：`ArrayList 比 LinkedList 在随机访问的时候效率要高，因为 LinkedList 是线性的数据存储方式，所以需要移动指针从前往后依次查找。
+`增加和删除效率：`在非首尾的增加和删除操作，LinkedList 要比 ArrayList 效率要高，因为 ArrayList 增删操作要影响数组内的其他数据的下标。
+`内存空间占用：`LinkedList 比 ArrayList 更占内存，因为 LinkedList 的节点除了存储数据，还存储了两个引用，一个指向前一个元素，一个指向后一个元素。
+`线程安全：`ArrayList 和 LinkedList 都是不同步的，也就是不保证线程安全；
+`综合来说，在需要频繁读取集合中的元素时，更推荐使用 ArrayList，而在插入和删除操作较多时，更推荐使用 LinkedList。`
 
-补充：数据结构基础之双向链表
+> 补充：数据结构基础之双向链表
 
 双向链表也叫双链表，是链表的一种，它的每个数据结点中都有两个指针，分别指向直接后继和直接前驱。所以，从双向链表中的任意一个结点开始，都可以很方便地访问它的前驱结点和后继结点。
 
-ArrayList 和 Vector 的区别是什么？
+### 2.1.9 ArrayList 和 Vector 的区别是什么？
 这两个类都实现了 List 接口（List 接口继承了 Collection 接口），他们都是有序集合
 
-线程安全：Vector 使用了 Synchronized 来实现线程同步，是线程安全的，而 ArrayList 是非线程安全的。
-性能：ArrayList 在性能方面要优于 Vector。
-扩容：ArrayList 和 Vector 都会根据实际的需要动态的调整容量，只不过在 Vector 扩容每次会增加 1 倍，而 ArrayList 只会增加 50%。
+`线程安全：`Vector 使用了 Synchronized 来实现线程同步，是线程安全的，而 ArrayList 是非线程安全的。
+`性能：`ArrayList 在性能方面要优于 Vector。
+`扩容：`ArrayList 和 Vector 都会根据实际的需要动态的调整容量，只不过在 Vector 扩容每次会增加 1 倍，而 ArrayList 只会增加 50%。
 Vector类的所有方法都是同步的。可以由两个线程安全地访问一个Vector对象、但是一个线程访问Vector的话代码要在同步操作上耗费大量的时间。
 
-Arraylist不是同步的，所以在不需要保证线程安全时时建议使用Arraylist。
+Arraylist不是同步的，所以在不需要保证线程安全时建议使用Arraylist。
 
-插入数据时，ArrayList、LinkedList、Vector谁速度较快？阐述 ArrayList、Vector、LinkedList 的存储性能和特性？
-ArrayList、LinkedList、Vector 底层的实现都是使用数组方式存储数据。数组元素数大于实际存储的数据以便增加和插入元素，它们都允许直接按序号索引元素，但是插入元素要涉及数组元素移动等内存操作，所以索引数据快而插入数据慢。
+### 2.1.10 插入数据时，ArrayList、LinkedList、Vector谁速度较快？阐述 ArrayList、Vector、LinkedList 的存储性能和特性？
+ArrayList、LinkedList、Vector 底层的实现都是使用`数组结构`存储数据。数组元素数大于实际存储的数据以便增加和插入元素，它们都允许直接按序号查找元素，但是插入元素要涉及数组元素移动等内存操作，所以查找数据快而插入数据慢。
 
 Vector 中的方法由于加了 synchronized 修饰，因此 Vector 是线程安全容器，但性能上较ArrayList差。
 
-LinkedList 使用双向链表实现存储，按序号索引数据需要进行前向或后向遍历，但插入数据时只需要记录当前项的前后项即可，所以 LinkedList 插入速度较快。
+LinkedList 使用双向链表实现存储，按序号查砸后数据需要进行前向或后向遍历，但插入数据时只需要记录当前项的前后项即可，所以 LinkedList 插入速度较快。
 
-多线程场景下如何使用 ArrayList？
+### 2.1.11 多线程场景下如何使用 ArrayList？
 ArrayList 不是线程安全的，如果遇到多线程场景，可以通过 Collections 的 synchronizedList 方法将其转换成线程安全的容器后再使用。例如像下面这样：
+
 ```java
 List<String> synchronizedList = Collections.synchronizedList(list);
 synchronizedList.add("aaa");
@@ -237,8 +246,9 @@ for (int i = 0; i < synchronizedList.size(); i++) {
     System.out.println(synchronizedList.get(i));
 }
 ```
-为什么 ArrayList 的 elementData 加上 transient 修饰？
+### 2.1.12 为什么 ArrayList 的 elementData 加上 transient 修饰？
 ArrayList 中的数组定义如下：
+
 ```java
 private transient Object[] elementData;
 ```
@@ -247,44 +257,49 @@ private transient Object[] elementData;
 public class ArrayList<E> extends AbstractList<E>
      implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 ```
-可以看到 ArrayList 实现了 Serializable 接口，这意味着 ArrayList 支持序列化。transient 的作用是说不希望 elementData 数组被序列化，重写了 writeObject 实现：
+可以看到 ArrayList 实现了 Serializable 接口，这意味着 ArrayList 支持序列化。`transient 的作用是说不希望 elementData 数组被序列化，`重写了 writeObject 实现：
 ```java
 private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException{
-    *// Write out element count, and any hidden stuff*
-        int expectedModCount = modCount;
+    // Write out element count, and any hidden stuff*
+    int expectedModCount = modCount;
     s.defaultWriteObject();
-    *// Write out array length*
-        s.writeInt(elementData.length);
-    *// Write out all elements in the proper order.*
-        for (int i=0; i<size; i++)
-            s.writeObject(elementData[i]);
+    // Write out array length*
+    s.writeInt(elementData.length);
+    // Write out all elements in the proper order.*
+    for (int i = 0; i < size; i++)
+        s.writeObject(elementData[i]);
     if (modCount != expectedModCount) {
         throw new ConcurrentModificationException();
+    }
 }
 ```
 每次序列化时，先调用 defaultWriteObject() 方法序列化 ArrayList 中的非 transient 元素，然后遍历 elementData，只序列化已存入的元素，这样既加快了序列化的速度，又减小了序列化之后的文件大小。
 
-List 和 Set 的区别
-List , Set 都是继承自Collection 接口
+### 2.1.13 List 和 Set 的区别
+- List , Set 都是继承自Collection 接口
 
-List 特点：一个有序（元素存入集合的顺序和取出的顺序一致）容器，元素可以重复，可以插入多个null元素，元素都有索引。常用的实现类有 ArrayList、LinkedList 和 Vector。
+- List 特点：一个有序（元素存入集合的顺序和取出的顺序一致）容器，元素可以重复，可以插入多个null元素，元素都有索引。常用的实现类有 ArrayList、LinkedList 和 Vector。
 
-Set 特点：一个无序（存入和取出顺序有可能不一致）容器，不可以存储重复元素，只允许存入一个null元素，必须保证元素唯一性。Set 接口常用实现类是 HashSet、LinkedHashSet 以及 TreeSet。
+- Set 特点：一个无序（存入和取出顺序有可能不一致）容器，不可以存储重复元素，只允许存入一个null元素，必须保证元素唯一性。Set 接口常用实现类是 HashSet、LinkedHashSet 以及 TreeSet。
 
-另外 List 支持for循环，也就是通过下标来遍历，也可以用迭代器，但是set只能用迭代，因为他无序，无法用下标来取得想要的值。
+- 另外 List 支持for循环，也就是通过下标来遍历，也可以用迭代器，但是set只能用迭代，因为他无序，无法用下标来取得想要的值。
 
-Set和List对比
+- Set：检索元素效率低下，删除和插入效率高，插入和删除不会引起元素位置改变。
 
-Set：检索元素效率低下，删除和插入效率高，插入和删除不会引起元素位置改变。
-List：和数组类似，List可以动态增长，查找元素效率高，插入删除元素效率低，因为会引起其他元素位置改变
+- List：和数组类似，List可以动态增长，查找元素效率高，插入删除元素效率低，因为会引起其他元素位置改变
 
 ## 2.2 Set接口
-说一下 HashSet 的实现原理？
-HashSet 是基于 HashMap 实现的，HashSet的值存放于HashMap的key上，HashMap的value统一为PRESENT，因此 HashSet 的实现比较简单，相关 HashSet 的操作，基本上都是直接调用底层 HashMap 的相关方法来完成，HashSet 不允许重复的值。
+### 2.2.1 说一下 HashSet 的实现原理？
+`HashSet 是基于 HashMap 实现的`，HashSet的值存放于HashMap的key上，HashMap的value统一为PRESENT，因此 HashSet 的实现比较简单，相关 HashSet 的操作，基本上都是直接调用底层 HashMap 的相关方法来完成，`HashSet 不允许重复的值。`
 
-HashSet如何检查重复？HashSet是如何保证数据不可重复的？
+```java
+private static final Object PRESENT = new Object();
+```
+
+### 2.2.2 HashSet如何检查重复？HashSet是如何保证数据不可重复的？
+
 向HashSet 中add ()元素时，判断元素是否存在的依据，不仅要比较hash值，同时还要结合equles 方法比较。
-HashSet 中的add ()方法会使用HashMap 的put()方法。
+HashSet 中的add ()方法会调用 HashMap 的put()方法。
 
 HashMap 的 key 是唯一的，由源码可以看出 HashSet 添加进去的值就是作为HashMap 的key，并且在HashMap中如果K/V相同时，会用新的V覆盖掉旧的V，然后返回旧的V。所以不会重复（ HashMap 比较key是否相等是先比较hashcode 再比较equals ）。
 
@@ -302,32 +317,40 @@ public boolean add(E e) {
 	return map.put(e, PRESENT)==null;
 }
 ```
-hashCode（）与equals（）的相关规定：
+### 2.2.3 hashCode() 、equals() 、== 
+> hashCode（）与equals（）的相关规定：
 
 如果两个对象相等，则hashcode一定也是相同的
 两个对象相等,对两个equals方法返回true
 两个对象有相同的hashcode值，它们也不一定是相等的
 综上，equals方法被覆盖过，则hashCode方法也必须被覆盖
 hashCode()的默认行为是对堆上的对象产生独特值。如果没有重写hashCode()，则该class的两个对象无论如何都不会相等（即使这两个对象指向相同的数据）。
-==与equals的区别
 
-==是判断两个变量或实例是不是指向同一个内存空间 equals是判断两个变量或实例所指向的内存空间的值是不是相同
-==是指对内存地址进行比较 equals()是对字符串的内容进行比较3.==指引用是否相同 equals()指的是值是否相同
-HashSet与HashMap的区别
-HashMap	HashSet
-实现了Map接口	实现Set接口
-存储键值对	仅存储对象
-调用put（）向map中添加元素	调用add（）方法向Set中添加元素
-HashMap使用键（Key）计算Hashcode	HashSet使用成员对象来计算hashcode值，对于两个对象来说hashcode可能相同，所以equals()方法用来判断对象的相等性，如果两个对象不同的话，那么返回false
-HashMap相对于HashSet较快，因为它是使用唯一的键获取对象	HashSet较HashMap来说比较慢
+> ==与equals的区别
+
+- ==是判断两个变量或实例是不是指向同一个内存空间，equals是判断两个变量或实例所指向的内存空间的值是不是相同
+- ==是指对内存地址进行比较 equals()是对字符串的内容进行比较
+- ==指引用是否相同 equals()指的是值是否相同
+
+### 2.2.4 HashSet与HashMap的区别
+
+| HashMap                                                | HashSet                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------ |
+| 实现了Map接口                                          | 实现Set接口                                                  |
+| 存储键值对                                             | 仅存储对象                                                   |
+| 调用put() 向map中添加元素                             | 调用add() 方法向Set中添加元素                               |
+| HashMap使用键（Key）计算Hashcode                       | HashSet使用成员对象来计算hashcode值，对于两个对象来说hashcode可能相同，所以equals()方法用来判断对象的相等性 |
+| HashMap相对于HashSet较快，因为它是使用唯一的键获取对象 | HashSet较HashMap来说比较慢                                   |
+
 ## 2.3 Queue
-BlockingQueue是什么？
+### 2.3.1 BlockingQueue是什么？
 Java.util.concurrent.BlockingQueue是一个队列，在进行检索或移除一个元素的时候，它会等待队列变为非空；当在添加一个元素时，它会等待队列中的可用空间。BlockingQueue接口是Java集合框架的一部分，主要用于实现生产者-消费者模式。我们不需要担心等待生产者有可用的空间，或消费者有可用的对象，因为它都在BlockingQueue的实现类中被处理了。Java提供了集中BlockingQueue的实现，比如ArrayBlockingQueue、LinkedBlockingQueue、PriorityBlockingQueue,、SynchronousQueue等。
 
-在 Queue 中 poll()和 remove()有什么区别？
+### 2.3.2 在 Queue 中 poll()和 remove()有什么区别？
 相同点：都是返回第一个元素，并在队列中删除返回的对象。
 不同点：如果没有元素 poll()会返回 null，而 remove()会直接抛出 NoSuchElementException 异常。
 代码示例：
+
 ```java
 Queue<String> queue = new LinkedList<String>();
 queue. offer("string"); // add
@@ -355,12 +378,12 @@ HashMap 基于 Hash 算法实现的
 JDK1.8之前
 JDK1.8之前采用的是拉链法。拉链法：将链表和数组相结合。也就是说创建一个链表数组，数组中每一格就是一个链表。若遇到哈希冲突，则将冲突的值加到链表中即可。
 
-
+![image-20210927113401019](https://i.loli.net/2021/09/27/BKqHm9brFfkpA6e.png)
 
 JDK1.8之后
 相比于之前的版本，jdk1.8在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。
 
-
+![image-20210927113434360](https://i.loli.net/2021/09/27/I8T2fWa5He1MU43.png)
 
 JDK1.7 VS JDK1.8 比较
 JDK1.8主要解决或优化了一下问题：
@@ -368,17 +391,26 @@ JDK1.8主要解决或优化了一下问题：
 resize 扩容优化
 引入了红黑树，目的是避免单条链表过长而影响查询效率，红黑树算法请参考
 解决了多线程死循环问题，但仍是非线程安全的，多线程时可能会造成数据丢失问题。
-不同	JDK 1.7	JDK 1.8
-存储结构	数组 + 链表	数组 + 链表 + 红黑树
-初始化方式	单独函数：inflateTable()	直接集成到了扩容函数resize()中
-hash值计算方式	扰动处理 = 9次扰动 = 4次位运算 + 5次异或运算	扰动处理 = 2次扰动 = 1次位运算 + 1次异或运算
-存放数据的规则	无冲突时，存放数组；冲突时，存放链表	无冲突时，存放数组；冲突 & 链表长度 < 8：存放单链表；冲突 & 链表长度 > 8：树化并存放红黑树
-插入数据方式	头插法（先讲原位置的数据移到后1位，再插入数据到该位置）	尾插法（直接插入到链表尾部/红黑树）
-扩容后存储位置的计算方式	全部按照原来方法进行计算（即hashCode ->> 扰动函数 ->> (h&length-1)）	按照扩容后的规律计算（即扩容后的位置=原位置 or 原位置 + 旧容量）
+
+| 不同                     | JDK 1.7                                                      | JDK 1.8                                                      |
+| ------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 存储结构                 | 数组 + 链表                                                  | 数组 + 链表 + 红黑树                                         |
+| 初始化方式               | 单独函数：inflateTable()                                     | 直接集成到了扩容函数resize()中                               |
+| hash值计算方式           | 扰动处理 = 9次扰动 = 4次位运算  + 5次异或运算                | 扰动处理 = 2次扰动 = 1次位运算  + 1次异或运算                |
+| 存放数据的规则           | 无冲突时，存放数组；冲突时，存放链表                         | 无冲突时，存放数组；冲突 & 链表长度 < 8：存放单链表；冲突 & 链表长度  > 8：树化并存放红黑树 |
+| 插入数据方式             | 头插法（先讲原位置的数据移到后1位，再插入数据到该位置）      | 尾插法（直接插入到链表尾部/红黑树）                          |
+| 扩容后存储位置的计算方式 | 全部按照原来方法进行计算（即hashCode ->> 扰动函数 ->> (h&length-1)） | 按照扩容后的规律计算（即扩容后的位置=原位置 or 原位置 + 旧容量） |
+
+
+
 ## 3.3 HashMap的put方法的具体流程？
 当我们put的时候，首先计算 key的hash值，这里调用了 hash方法，hash方法实际是让key.hashCode()与key.hashCode()>>>16进行异或操作，高16bit补0，一个数和0异或不变，所以 hash 函数大概的作用就是：高16bit不变，低16bit和高16bit做了一个异或，目的是减少碰撞。按照函数注释，因为bucket数组大小是2的幂，计算下标index = (table.length - 1) & hash，如果不做 hash 处理，相当于散列生效的只有几个低 bit 位，为了减少散列的碰撞，设计者综合考虑了速度、作用、质量之后，使用高16bit和低16bit异或来简单处理减少碰撞，而且JDK8中用了复杂度 O（logn）的树结构来提升碰撞下的性能。
 
 putVal方法执行流程图
+
+![putVal方法执行流程图](https://i.loli.net/2021/09/27/T1oKXzquANOa2JY.png)
+
+
 
 
 ```java
@@ -605,7 +637,7 @@ Hash，一般翻译为“散列”，也有直接音译为“哈希”的，这�
 HashMap的数据结构
 在Java中，保存数据有两种比较简单的数据结构：数组和链表。数组的特点是：寻址容易，插入和删除困难；链表的特点是：寻址困难，但插入和删除容易；所以我们将数组和链表结合在一起，发挥两者各自的优势，使用一种叫做链地址法的方式可以解决哈希冲突：
 
-
+![img](https://i.loli.net/2021/09/27/idM7yXpVOzTR2Lh.png)
 
 这样我们就可以将拥有相同哈希值的对象组织成一个链表放在hash值所对应的bucket下，但相比于hashCode返回的int类型，我们HashMap初始的容量大小DEFAULT_INITIAL_CAPACITY = 1 << 4（即2的四次方16）要远小于int类型的范围，所以我们如果只是单纯的用hashCode取余来获取对应的bucket这将会大大增加哈希碰撞的概率，并且最坏情况下还会将HashMap变成一个单链表，所以我们还需要对hashCode作一定的优化
 
@@ -620,6 +652,8 @@ static final int hash(Object key) {
 这比在JDK 1.7中，更为简洁，相比在1.7中的4次位运算，5次异或运算（9次扰动），在1.8中，只进行了1次位运算和1次异或运算（2次扰动）；
 
 JDK1.8新增红黑树
+
+![img](https://i.loli.net/2021/09/27/kKICyVU4p82FvZ6.png)
 
 
 通过上面的链地址法（使用散列表）和扰动函数我们成功让我们的数据分布更平均，哈希碰撞减少，但是当我们的HashMap中存在大量数据时，加入我们某个bucket下对应的链表有n个元素，那么遍历时间复杂度就为O(n)，为了针对这个问题，JDK1.8在HashMap中新增了红黑树的数据结构，进一步使得遍历复杂度降低至O(logn)；
@@ -694,15 +728,15 @@ ConcurrentHashMap 和 Hashtable 的区别主要体现在实现线程安全的方
 
 HashTable:
 
-
+![img](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91c2VyLWdvbGQtY2RuLnhpdHUuaW8vMjAxOC84LzIzLzE2NTY2NzdhNmYyNTYxOTY?x-oss-process=image/format,png)
 
 JDK1.7的ConcurrentHashMap：
 
-
+![img](https://i.loli.net/2021/09/27/NOriQmgV14ASlUw.png)
 
 JDK1.8的ConcurrentHashMap（TreeBin: 红黑二叉树节点 Node: 链表节点）：
 
-
+![img](https://i.loli.net/2021/09/27/dK7iFt4SagrOe5n.png)
 
 答：ConcurrentHashMap 结合了 HashMap 和 HashTable 二者的优势。HashMap 没有考虑同步，HashTable 考虑了同步的问题。但是 HashTable 在每次同步执行时都要锁住整个结构。 ConcurrentHashMap 锁的方式是稍微细粒度的。
 
@@ -715,7 +749,7 @@ JDK1.7
 
 一个 ConcurrentHashMap 里包含一个 Segment 数组。Segment 的结构和HashMap类似，是一种数组和链表结构，一个 Segment 包含一个 HashEntry 数组，每个 HashEntry 是一个链表结构的元素，每个 Segment 守护着一个HashEntry数组里的元素，当对 HashEntry 数组的数据进行修改时，必须首先获得对应的 Segment的锁。
 
-
+![img](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy83ODk2ODkwLTY0NTgzNmU3MjJjMmE5ZjkucG5n?x-oss-process=image/format,png)
 
 该类包含两个静态内部类 HashEntry 和 Segment ；前者用来封装映射表的键值对，后者用来充当锁的角色；
 Segment 是一种可重入的锁 ReentrantLock，每个 Segment 守护一个HashEntry 数组里得元素，当对 HashEntry 数组的数据进行修改时，必须首先获得对应的 Segment 锁。
@@ -725,7 +759,7 @@ JDK1.8
 
 结构如下：
 
-
+![img](https://i.loli.net/2021/09/27/1L6Vl2YSpcbrJZ3.png)
 
 附加源码，有需要的可以看看
 
