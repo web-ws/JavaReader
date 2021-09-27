@@ -155,7 +155,7 @@
 
     /*圆角边框*/
     img,pre {
-      border-radius: 15px;
+      border-radius: 10px;
     }
 
     /*添加代码块复制按钮样式*/
@@ -178,6 +178,7 @@
 <body>
   <div id="app">🏃‍🏃‍🏃‍💨 加载中，欢迎来到JavaReader...</div>
   <script>
+    // 设置笔记的链接
     var nameLink;
     if (location.host == "localhost:3000") {
       nameLink = 'http://localhost:3000/#/README'
@@ -347,11 +348,18 @@
       var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours - diffMinutes * minutes) / seconds);
       document.getElementById("sitetime").innerHTML = " 本站已安全运行 " + diffYears + " 年 " + diffDays + " 天 " + diffHours + " 小时 " + diffMinutes + " 分 " + diffSeconds + " 秒 ";
     };
-    /*
+
     window.onload = function() {
-      siteTime();
+      //siteTime();
+      // 设置导航栏的显示
+      //var hrefArr = ['http://localhost:3000/#/', 'https://web-ws.github.io/JavaReader/#/'];
+      //var app_nav = document.getElementsByTagName('nav');
+      //if (hrefArr.indexOf(location.href) > -1) {
+      //  app_nav[0].style.display = 'none';
+      //} else {
+      //  app_nav[0].style.display = 'block';
+      //}
     }
-    */
   </script>
 
 </body>

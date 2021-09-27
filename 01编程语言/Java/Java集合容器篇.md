@@ -367,7 +367,11 @@ HashMap的数据结构： 在Java编程语言中，最基本的结构就是两�
 HashMap 基于 Hash 算法实现的
 
 当我们往Hashmap中put元素时，利用key的hashCode重新hash计算出当前对象的元素在数组中的下标
-存储时，如果出现hash值相同的key，此时有两种情况。(1)如果key相同，则覆盖原始值；(2)如果key不同（出现冲突），则将当前的key-value放入链表中
+存储时，如果出现hash值相同的key，此时有两种情况。
+
+(1)如果key相同，则覆盖原始值；
+
+(2)如果key不同（出现冲突），则将当前的key-value放入链表中
 获取时，直接找到hash值对应的下标，在进一步判断key是否相同，从而找到对应值。
 理解了以上过程就不难明白HashMap是如何解决hash冲突的问题，核心就是使用了数组的存储方式，然后将冲突的key的对象放入链表中，一旦发现冲突就在链表中做进一步的对比。
 需要注意Jdk 1.8中对HashMap的实现做了优化，当链表中的节点数据超过八个之后，该链表会转为红黑树来提高查询效率，从原来的O(n)到O(logn)
@@ -375,36 +379,40 @@ HashMap 基于 Hash 算法实现的
 ## 3.2 HashMap在JDK1.7和JDK1.8中有哪些不同？HashMap的底层实现
 在Java中，保存数据有两种比较简单的数据结构：数组和链表。数组的特点是：寻址容易，插入和删除困难；链表的特点是：寻址困难，但插入和删除容易；所以我们将数组和链表结合在一起，发挥两者各自的优势，使用一种叫做拉链法的方式可以解决哈希冲突。
 
-JDK1.8之前
+> JDK1.8之前
+
 JDK1.8之前采用的是拉链法。拉链法：将链表和数组相结合。也就是说创建一个链表数组，数组中每一格就是一个链表。若遇到哈希冲突，则将冲突的值加到链表中即可。
 
-![image-20210927113401019](https://i.loli.net/2021/09/27/BKqHm9brFfkpA6e.png)
+<img src="https://i.loli.net/2021/09/27/BKqHm9brFfkpA6e.png" alt="image-20210927113401019" style="zoom:50%;" />
 
-JDK1.8之后
+> JDK1.8之后
+
 相比于之前的版本，jdk1.8在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。
 
-![image-20210927113434360](https://i.loli.net/2021/09/27/I8T2fWa5He1MU43.png)
+<img src="https://i.loli.net/2021/09/27/I8T2fWa5He1MU43.png" alt="image-20210927113434360" style="zoom:50%;" />
 
-JDK1.7 VS JDK1.8 比较
+> JDK1.7 VS JDK1.8 比较
+
 JDK1.8主要解决或优化了一下问题：
 
-resize 扩容优化
-引入了红黑树，目的是避免单条链表过长而影响查询效率，红黑树算法请参考
-解决了多线程死循环问题，但仍是非线程安全的，多线程时可能会造成数据丢失问题。
+- resize 扩容优化
+- 引入了红黑树，目的是避免单条链表过长而影响查询效率，红黑树算法请参考
+- 解决了多线程死循环问题，但仍是非线程安全的，多线程时可能会造成数据丢失问题。
+
 
 | 不同                     | JDK 1.7                                                      | JDK 1.8                                                      |
 | ------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | 存储结构                 | 数组 + 链表                                                  | 数组 + 链表 + 红黑树                                         |
 | 初始化方式               | 单独函数：inflateTable()                                     | 直接集成到了扩容函数resize()中                               |
 | hash值计算方式           | 扰动处理 = 9次扰动 = 4次位运算  + 5次异或运算                | 扰动处理 = 2次扰动 = 1次位运算  + 1次异或运算                |
-| 存放数据的规则           | 无冲突时，存放数组；冲突时，存放链表                         | 无冲突时，存放数组；冲突 & 链表长度 < 8：存放单链表；冲突 & 链表长度  > 8：树化并存放红黑树 |
+| 存放数据的规则           | 无冲突时，存放数组；冲突时，存放链表                         | 无冲突时，存放数组；<br/>冲突 & 链表长度 < 8 ：存放单链表；<br/>冲突 & 链表长度  > 8 && 数组长度 > 64：树化并存放红黑树；<br/>删减元素，树的节点 < 6 :红黑树转换成链表 |
 | 插入数据方式             | 头插法（先讲原位置的数据移到后1位，再插入数据到该位置）      | 尾插法（直接插入到链表尾部/红黑树）                          |
 | 扩容后存储位置的计算方式 | 全部按照原来方法进行计算（即hashCode ->> 扰动函数 ->> (h&length-1)） | 按照扩容后的规律计算（即扩容后的位置=原位置 or 原位置 + 旧容量） |
 
 
 
 ## 3.3 HashMap的put方法的具体流程？
-当我们put的时候，首先计算 key的hash值，这里调用了 hash方法，hash方法实际是让key.hashCode()与key.hashCode()>>>16进行异或操作，高16bit补0，一个数和0异或不变，所以 hash 函数大概的作用就是：高16bit不变，低16bit和高16bit做了一个异或，目的是减少碰撞。按照函数注释，因为bucket数组大小是2的幂，计算下标index = (table.length - 1) & hash，如果不做 hash 处理，相当于散列生效的只有几个低 bit 位，为了减少散列的碰撞，设计者综合考虑了速度、作用、质量之后，使用高16bit和低16bit异或来简单处理减少碰撞，而且JDK8中用了复杂度 O（logn）的树结构来提升碰撞下的性能。
+当我们put的时候，首先计算 key的hash值，这里调用了 hash方法，hash方法实际是让key.hashCode()与key.hashCode()>>>16进行异或操作，高16bit补0，一个数和0异或不变，`所以 hash 函数大概的作用就是高低位异或，目的是减少碰撞。`按照函数注释，因为bucket数组大小是2的幂，计算下标index = (table.length - 1) & hash，如果不做 hash 处理，相当于散列生效的只有几个低 bit 位，为了减少散列的碰撞，设计者综合考虑了速度、作用、质量之后，使用高16bit和低16bit异或来简单处理减少碰撞，而且JDK8中用了复杂度 O（logn）的树结构来提升碰撞下的性能。
 
 putVal方法执行流程图
 
@@ -511,9 +519,9 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 ④.判断table[i] 是否为treeNode，即table[i] 是否是红黑树，如果是红黑树，则直接在树中插入键值对，否则转向⑤；
 
-⑤.遍历table[i]，判断链表长度是否大于8，大于8的话把链表转换为红黑树，在红黑树中执行插入操作，否则进行链表的插入操作；遍历过程中若发现key已经存在直接覆盖value即可；
+⑤.遍历table[i]，判断链表长度是否大于8并且数组长度大于64，把链表转换为红黑树，在红黑树中执行插入操作，否则进行链表的插入操作；遍历过程中若发现key已经存在直接覆盖value即可；
 
-⑥.插入成功后，判断实际存在的键值对数量size是否超多了最大容量threshold，如果超过，进行扩容。
+⑥.插入成功后，判断实际存在的键值对数量size是否大于阈值threshold，如果超过，进行扩容。
 
 ## 3.3 HashMap的扩容操作是怎么实现的？
 ①.在jdk1.8中，resize方法是在hashmap中的键值对大于阀值时或者初始化时，就调用resize方法进行扩容；
@@ -522,7 +530,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 ③.扩展后Node对象的位置要么在原位置，要么移动到原偏移量两倍的位置。
 
-在putVal()中，我们看到在这个函数里面使用到了2次resize()方法，resize()方法表示的在进行第一次初始化时会对其进行扩容，或者当该数组的实际大小大于其临界值值(第一次为12),这个时候在扩容的同时也会伴随的桶上面的元素进行重新分发，这也是JDK1.8版本的一个优化的地方，在1.7中，扩容之后需要重新去计算其Hash值，根据Hash值对其进行分发，但在1.8版本中，则是根据在同一个桶的位置中进行判断(e.hash & oldCap)是否为0，重新进行hash分配后，该元素的位置要么停留在原始位置，要么移动到原始位置+增加的数组大小这个位置上
+在putVal()中，我们看到在这个函数里面使用到了2次resize()方法，`resize()方法表示的在进行第一次初始化时会对其进行扩容，或者当该数组的实际大小大于其临界值值(第一次为12)`，这个时候在扩容的同时也会伴随的桶上面的元素进行重新分发，这也是JDK1.8版本的一个优化的地方，在1.7中，扩容之后需要重新去计算其Hash值，根据Hash值对其进行分发，但在1.8版本中，则是根据在同一个桶的位置中进行判断(e.hash & oldCap)是否为0，重新进行hash分配后，该元素的位置要么停留在原始位置，要么移动到 `原始位置+旧容量` 这个位置上。
 ```java
 final Node<K,V>[] resize() {
     Node<K,V>[] oldTab = table;//oldTab指向hash桶数组
@@ -556,9 +564,11 @@ final Node<K,V>[] resize() {
     threshold = newThr;
     // 计算出新的数组长度后赋给当前成员变量table
     @SuppressWarnings({"rawtypes","unchecked"})
-        Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];//新建hash桶数组
-    table = newTab;//将新数组的值复制给旧的hash桶数组
-    // 如果原先的数组没有初始化，那么resize的初始化工作到此结束，否则进入扩容元素重排逻辑，使其均匀的分散
+        //新建hash桶数组
+        Node<K,V>[] newTab = (Node<K,V>[])new Node[newCap];
+    //将新数组的值复制给旧的hash桶数组
+    table = newTab;
+// 如果原先的数组没有初始化，那么resize的初始化工作到此结束，否则进入扩容元素重排逻辑，使其均匀的分散
     if (oldTab != null) {
         // 遍历新数组的所有桶下标
         for (int j = 0; j < oldCap; ++j) {
@@ -585,28 +595,28 @@ final Node<K,V>[] resize() {
                         next = e.next;
                         if ((e.hash & oldCap) == 0) {
                             if (loTail == null)
-                                // 初始化head指向链表当前元素e，e不一定是链表的第一个元素，初始化后loHead
-                                // 代表下标保持不变的链表的头元素
+                // 初始化head指向链表当前元素e，e不一定是链表的第一个元素，初始化后loHead
+               // 代表下标保持不变的链表的头元素
                                 loHead = e;
                             else                                
-                                // loTail.next指向当前e
+                           // loTail.next指向当前e
                                 loTail.next = e;
-                            // loTail指向当前的元素e
-                            // 初始化后，loTail和loHead指向相同的内存，所以当loTail.next指向下一个元素时，
-                            // 底层数组中的元素的next引用也相应发生变化，造成lowHead.next.next.....
-                            // 跟随loTail同步，使得lowHead可以链接到所有属于该链表的元素。
+               // loTail指向当前的元素e
+               // 初始化后，loTail和loHead指向相同的内存，所以当loTail.next指向下一个元素时，
+               // 底层数组中的元素的next引用也相应发生变化，造成lowHead.next.next.....
+               // 跟随loTail同步，使得lowHead可以链接到所有属于该链表的元素。
                             loTail = e;                           
                         }
                         else {
                             if (hiTail == null)
-                                // 初始化head指向链表当前元素e, 初始化后hiHead代表下标更改的链表头元素
+              // 初始化head指向链表当前元素e, 初始化后hiHead代表下标更改的链表头元素
                                 hiHead = e;
                             else
                                 hiTail.next = e;
                             hiTail = e;
                         }
                     } while ((e = next) != null);
-                    // 遍历结束, 将tail指向null，并把链表头放入新数组的相应下标，形成新的映射。
+          // 遍历结束, 将tail指向null，并把链表头放入新数组的相应下标，形成新的映射。
                     if (loTail != null) {
                         loTail.next = null;
                         newTab[j] = loHead;
@@ -626,12 +636,12 @@ final Node<K,V>[] resize() {
 ## 3.4 HashMap是怎么解决哈希冲突的？
 答：在解决这个问题之前，我们首先需要知道什么是哈希冲突，而在了解哈希冲突之前我们还要知道什么是哈希才行；
 
-什么是哈希？
+### 3.4.1 什么是哈希？
 Hash，一般翻译为“散列”，也有直接音译为“哈希”的，这就是把任意长度的输入通过散列算法，变换成固定长度的输出，该输出就是散列值（哈希值）；这种转换是一种压缩映射，也就是，散列值的空间通常远小于输入的空间，不同的输入可能会散列成相同的输出，所以不可能从散列值来唯一的确定输入值。简单的说就是一种将任意长度的消息压缩到某一固定长度的消息摘要的函数。
 
-所有散列函数都有如下一个基本特性**：根据同一散列函数计算出的散列值如果不同，那么输入值肯定也不同。但是，根据同一散列函数计算出的散列值如果相同，输入值不一定相同**。
+所有散列函数都有如下一个基本特性：`根据同一散列函数计算出的散列值如果不同，那么输入值肯定也不同。但是，根据同一散列函数计算出的散列值如果相同，输入值不一定相同`。
 
-什么是哈希冲突？
+### 3.4.2 什么是哈希冲突？
 当两个不同的输入值，根据同一散列函数计算出相同的散列值的现象，我们就把它叫做碰撞（哈希碰撞）。
 
 HashMap的数据结构
@@ -639,26 +649,28 @@ HashMap的数据结构
 
 ![img](https://i.loli.net/2021/09/27/idM7yXpVOzTR2Lh.png)
 
-这样我们就可以将拥有相同哈希值的对象组织成一个链表放在hash值所对应的bucket下，但相比于hashCode返回的int类型，我们HashMap初始的容量大小DEFAULT_INITIAL_CAPACITY = 1 << 4（即2的四次方16）要远小于int类型的范围，所以我们如果只是单纯的用hashCode取余来获取对应的bucket这将会大大增加哈希碰撞的概率，并且最坏情况下还会将HashMap变成一个单链表，所以我们还需要对hashCode作一定的优化
+这样我们就可以将拥有相同哈希值的对象组织成一个链表放在hash值所对应的bucket下，但相比于hashCode返回的int类型，我们HashMap初始的容量大小DEFAULT_INITIAL_CAPACITY = 1 << 4（即2的四次方=16）要远小于int类型的范围，所以我们如果只是单纯的用hashCode取余来获取对应的bucket这将会大大增加哈希碰撞的概率，并且最坏情况下还会将HashMap变成一个单链表，所以我们还需要对hashCode作一定的优化
 
-hash()函数
-上面提到的问题，主要是因为如果使用hashCode取余，那么相当于参与运算的只有hashCode的低位，高位是没有起到任何作用的，所以我们的思路就是让hashCode取值出的高位也参与运算，进一步降低hash碰撞的概率，使得数据分布更平均，我们把这样的操作称为扰动，在JDK 1.8中的hash()函数如下：
+### 3.4.3 hash()函数
+上面提到的问题，`主要是因为如果使用hashCode取余，那么相当于参与运算的只有hashCode的低位，高位是没有起到任何作用的`，所以我们的思路就是让hashCode取值出的高位也参与运算，进一步降低hash碰撞的概率，使得数据分布更平均，我们把这样的操作称为扰动，在JDK 1.8中的hash()函数如下：
+
 ```java
 static final int hash(Object key) {
     int h;
-    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);// 与自己右移16位进行异或运算（高低位异或）
+    // 与自己右移16位进行异或运算（高低位异或）
+    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
 }
 ```
 这比在JDK 1.7中，更为简洁，相比在1.7中的4次位运算，5次异或运算（9次扰动），在1.8中，只进行了1次位运算和1次异或运算（2次扰动）；
 
-JDK1.8新增红黑树
+### 3.4.4 JDK1.8新增红黑树
 
 ![img](https://i.loli.net/2021/09/27/kKICyVU4p82FvZ6.png)
 
 
-通过上面的链地址法（使用散列表）和扰动函数我们成功让我们的数据分布更平均，哈希碰撞减少，但是当我们的HashMap中存在大量数据时，加入我们某个bucket下对应的链表有n个元素，那么遍历时间复杂度就为O(n)，为了针对这个问题，JDK1.8在HashMap中新增了红黑树的数据结构，进一步使得遍历复杂度降低至O(logn)；
+通过上面的链地址法（使用散列表）和扰动函数我们成功让我们的数据分布更平均，哈希碰撞减少，但是当我们的HashMap中存在大量数据时，加入某个bucket下对应的链表有n个元素，那么遍历时间复杂度就为O(n)，为了针对这个问题，JDK1.8在HashMap中新增了红黑树的数据结构，进一步使得遍历复杂度降低至O(logn)；
 
-总结
+### 3.4.5 总结
 简单总结一下HashMap是使用了哪些方法来有效解决哈希冲突的：
 
 1. 使用链地址法（使用散列表）来链接拥有相同hash值的数据；
@@ -668,84 +680,103 @@ JDK1.8新增红黑树
 ## 3.5 能否使用任何类作为 Map 的 key？
 可以使用任何类作为 Map 的 key，然而在使用之前，需要考虑以下几点：
 
-如果类重写了 equals() 方法，也应该重写 hashCode() 方法。
+- 如果类重写了 equals() 方法，也应该重写 hashCode() 方法。
 
-类的所有实例需要遵循与 equals() 和 hashCode() 相关的规则。
+- 类的所有实例需要遵循与 equals() 和 hashCode() 相关的规则。
 
-如果一个类没有使用 equals()，不应该在 hashCode() 中使用它。
+- 如果一个类没有使用 equals()，不应该在 hashCode() 中使用它。
 
-用户自定义 Key 类最佳实践是使之为不可变的，这样 hashCode() 值可以被缓存起来，拥有更好的性能。不可变的类也可以确保 hashCode() 和 equals() 在未来不会改变，这样就会解决与可变相关的问题了。
+- 用户自定义 Key 类最佳实践是使之为不可变的，这样 hashCode() 值可以被缓存起来，拥有更好的性能。不可变的类也可以确保 hashCode() 和 equals() 在未来不会改变，这样就会解决与可变相关的问题了。
 
 ## 3.6 为什么HashMap中String、Integer这样的包装类适合作为K？
 答：String、Integer等包装类的特性能够保证Hash值的不可更改性和计算准确性，能够有效的减少Hash碰撞的几率
 
 都是final类型，即不可变性，保证key的不可更改性，不会存在获取hash值不同的情况
 内部已重写了equals()、hashCode()等方法，遵守了HashMap内部的规范（不清楚可以去上面看看putValue的过程），不容易出现Hash值计算错误的情况；
+
 ## 3.7 如果使用Object作为HashMap的Key，应该怎么办呢？
 答：重写hashCode()和equals()方法
 
-重写hashCode()是因为需要计算存储数据的存储位置，需要注意不要试图从散列码计算中排除掉一个对象的关键部分来提高性能，这样虽然能更快但可能会导致更多的Hash碰撞；
-重写equals()方法，需要遵守自反性、对称性、传递性、一致性以及对于任何非null的引用值x，x.equals(null)必须返回false的这几个特性，目的是为了保证key在哈希表中的唯一性；
+- 重写hashCode()是因为需要计算存储数据的存储位置，需要注意不要试图从散列码计算中排除掉一个对象的关键部分来提高性能，这样虽然能更快但可能会导致更多的Hash碰撞；
+- 重写equals()方法，需要`遵守自反性、对称性、传递性、一致性以及对于任何非null的引用值x，x.equals(null)必须返回false的这几个特性`，目的是为了保证key在哈希表中的唯一性；
 
 ## 3.8 HashMap为什么不直接使用hashCode()处理后的哈希值直接作为table的下标？
 
 答：hashCode()方法返回的是int整数类型，其范围为-(2 ^ 31)~(2 ^ 31 - 1)，约有40亿个映射空间，而HashMap的容量范围是在16（初始化默认值）~2 ^ 30，HashMap通常情况下是取不到最大值的，并且设备上也难以提供这么多的存储空间，从而导致通过hashCode()计算出的哈希值可能不在数组大小范围内，进而无法匹配存储位置；
 
-那怎么解决呢？
+> 那怎么解决呢？
 
-HashMap自己实现了自己的hash()方法，通过两次扰动使得它自己的哈希值高低位自行进行异或运算，降低哈希碰撞概率也使得数据分布更平均；
-在保证数组长度为2的幂次方的时候，使用hash()运算之后的值与运算（&）（数组长度 - 1）来获取数组下标的方式进行存储，这样一来是比取余操作更加有效率，二来也是因为只有当数组长度为2的幂次方时，h&(length-1)才等价于h%length，三来解决了“哈希值与数组大小范围不匹配”的问题；
+HashMap自己实现了自己的hash()方法，通过两次扰动，`使得它自己的哈希值高低位异或运算`，降低哈希碰撞概率也使得数据分布更平均；
+在`保证数组长度为2的幂次方`的时候，使用 `hash()运算之后的值 与（数组长度 - 1）做与运算`，来获取数组下标的方式进行存储，这样
+一来是比取余操作更加有效率，
+二来也是因为只有当数组长度为2的幂次方时，h&(length-1)才等价于h%length，
+三来解决了“哈希值与数组大小范围不匹配”的问题；
+
 ## 3.9 HashMap 的长度为什么是2的幂次方
 为了能让 HashMap 存取高效，尽量较少碰撞，也就是要尽量把数据分配均匀，每个链表/红黑树长度大致相同。这个实现就是把数据存到哪个链表/红黑树中的算法。
 
-这个算法应该如何设计呢？
+> 这个算法应该如何设计呢？
 
 我们首先可能会想到采用%取余的操作来实现。但是，重点来了：“取余(%)操作中如果除数是2的幂次则等价于与其除数减一的与(&)操作（也就是说 hash%length==hash&(length-1)的前提是 length 是2的 n 次方；）。” 并且 采用二进制位操作 &，相对于%能够提高运算效率，这就解释了 HashMap 的长度为什么是2的幂次方。
 
-那为什么是两次扰动呢？
+> 那为什么是两次扰动呢？
 
 答：这样就是加大哈希值低位的随机性，使得分布更均匀，从而提高对应数组存储下标位置的随机性&均匀性，最终减少Hash冲突，两次就够了，已经达到了高位低位同时参与运算的目的；
 
 ## 3.10 HashMap 与 HashTable 有什么区别？
-线程安全： HashMap 是非线程安全的，HashTable 是线程安全的；HashTable 内部的方法基本都经过 synchronized 修饰。（如果你要保证线程安全的话就使用 ConcurrentHashMap 吧！）；
-效率： 因为线程安全的问题，HashMap 要比 HashTable 效率高一点。另外，HashTable 基本被淘汰，不要在代码中使用它；
-对Null key 和Null value的支持： HashMap 中，null 可以作为键，这样的键只有一个，可以有一个或多个键所对应的值为 null。但是在 HashTable 中 put 进的键值只要有一个 null，直接抛NullPointerException。
-**初始容量大小和每次扩充容量大小的不同 **： ①创建时如果不指定容量初始值，Hashtable 默认的初始大小为11，之后每次扩充，容量变为原来的2n+1。HashMap 默认的初始化大小为16。之后每次扩充，容量变为原来的2倍。②创建时如果给定了容量初始值，那么 Hashtable 会直接使用你给定的大小，而 HashMap 会将其扩充为2的幂次方大小。也就是说 HashMap 总是使用2的幂作为哈希表的大小，后面会介绍到为什么是2的幂次方。
-底层数据结构： JDK1.8 以后的 HashMap 在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。Hashtable 没有这样的机制。
-推荐使用：在 Hashtable 的类注释可以看到，Hashtable 是保留类不建议使用，推荐在单线程环境下使用 HashMap 替代，如果需要多线程使用则用 ConcurrentHashMap 替代。
-## 3.11 如何决定使用 HashMap 还是 TreeMap？
-对于在Map中插入、删除和定位元素这类操作，HashMap是最好的选择。然而，假如你需要对一个有序的key集合进行遍历，TreeMap是更好的选择。基于你的collection的大小，也许向HashMap中添加元素会更快，将map换为TreeMap进行有序key的遍历。
 
-## 3.12 HashMap 和 ConcurrentHashMap 的区别
-ConcurrentHashMap对整个桶数组进行了分割分段(Segment)，然后在每一个分段上都用lock锁进行保护，相对于HashTable的synchronized锁的粒度更精细了一些，并发性能更好，而HashMap没有锁机制，不是线程安全的。（JDK1.8之后ConcurrentHashMap启用了一种全新的方式实现,利用CAS算法。）
+线程安全： HashMap 是非线程安全的，HashTable 是线程安全的；HashTable 内部的方法基本都经过 synchronized 修饰。（如果你要保证线程安全的话就使用 ConcurrentHashMap 吧！）；
+
+效率： 因为线程安全的问题，HashMap 要比 HashTable 效率高一点。另外，`HashTable 基本被淘汰，不要在代码中使用它；`
+对Null key 和Null value的支持： HashMap 中，null 可以作为键，这样的键只有一个，可以有一个或多个键所对应的值为 null。但是在 HashTable 中 put 进的键值只要有一个 null，直接抛NullPointerException。
+
+初始容量大小和每次扩充容量大小的不同 ：
+①创建时如果不指定容量初始值，Hashtable 默认的初始大小为11，之后每次扩充，容量变为原来的2n+1。HashMap 默认的初始化大小为16。之后每次扩充，容量变为原来的2倍。
+②创建时如果给定了容量初始值，那么 Hashtable 会直接使用你给定的大小，而 HashMap 会将其扩充为2的幂次方大小。也就是说 HashMap 总是使用2的幂作为哈希表的大小。
+
+底层数据结构： JDK1.8 以后的 HashMap 在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。Hashtable 没有这样的机制。
+`推荐使用：在 Hashtable 的类注释可以看到，Hashtable 是保留类不建议使用，推荐在单线程环境下使用 HashMap 替代，如果需要多线程使用则用 ConcurrentHashMap 替代。`
+
+## 3.11 如何决定使用 HashMap 还是 TreeMap？
+
+对于在Map中插入、删除和定位元素这类操作，HashMap是最好的选择。然而，假如你需要`对一个有序的key集合进行遍历，TreeMap是更好的选择`。基于你的collection的大小，也许向HashMap中添加元素会更快，将map换为TreeMap进行有序key的遍历。
+
+## 3.12 jdk7，HashMap 和 ConcurrentHashMap 的区别
+
+ConcurrentHashMap对整个桶数组进行了分割分段(Segment)，然后在每一个分段上都用lock锁进行保护，相对于HashTable的synchronized锁的粒度更精细了一些，并发性能更好，而HashMap没有锁机制，不是线程安全的。（JDK1.8之后ConcurrentHashMap启用了一种全新的方式实现,利用CAS+Synchronized算法。）
 HashMap的键值对允许有null，但是ConCurrentHashMap都不允许。
+
 ## 3.13 ConcurrentHashMap 和 Hashtable 的区别？
 ConcurrentHashMap 和 Hashtable 的区别主要体现在实现线程安全的方式上不同。
 
 底层数据结构： JDK1.7的 ConcurrentHashMap 底层采用 分段的数组+链表 实现，JDK1.8 采用的数据结构跟HashMap1.8的结构一样，数组+链表/红黑二叉树。Hashtable 和 JDK1.8 之前的 HashMap 的底层数据结构类似都是采用 数组+链表 的形式，数组是 HashMap 的主体，链表则是主要为了解决哈希冲突而存在的；
-实现线程安全的方式（重要）： ① 在JDK1.7的时候，ConcurrentHashMap（分段锁） 对整个桶数组进行了分割分段(Segment)，每一把锁只锁容器其中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。（默认分配16个Segment，比Hashtable效率提高16倍。） 到了 JDK1.8 的时候已经摒弃了Segment的概念，而是直接用 Node 数组+链表+红黑树的数据结构来实现，并发控制使用 synchronized 和 CAS 来操作。（JDK1.6以后 对 synchronized锁做了很多优化） 整个看起来就像是优化过且线程安全的 HashMap，虽然在JDK1.8中还能看到 Segment 的数据结构，但是已经简化了属性，只是为了兼容旧版本；② Hashtable(同一把锁) :使用 synchronized 来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态，如使用 put 添加元素，另一个线程不能使用 put 添加元素，也不能使用 get，竞争会越来越激烈效率越低。
+
+实现线程安全的方式（重要）：
+① 在JDK1.7的时候，ConcurrentHashMap（分段锁） 对整个桶数组进行了分割分段(Segment)，每一把锁只锁容器其中一部分数据，多线程访问容器里不同数据段的数据，就不会存在锁竞争，提高并发访问率。（默认分配16个Segment，比Hashtable效率提高16倍。） 到了 JDK1.8 的时候已经摒弃了Segment的概念，而是直接用 Node 数组+链表+红黑树的数据结构来实现，并发控制使用 synchronized + CAS 来操作。
+② Hashtable(同一把锁) :使用 synchronized 来保证线程安全，效率非常低下。当一个线程访问同步方法时，其他线程也访问同步方法，可能会进入阻塞或轮询状态，如使用 put 添加元素，另一个线程不能使用 put 添加元素，也不能使用 get，竞争会越来越激烈效率越低。
+
 两者的对比图：
 
-HashTable:
+HashTable-全表锁
 
 ![img](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91c2VyLWdvbGQtY2RuLnhpdHUuaW8vMjAxOC84LzIzLzE2NTY2NzdhNmYyNTYxOTY?x-oss-process=image/format,png)
 
-JDK1.7的ConcurrentHashMap：
+JDK1.7的ConcurrentHashMap-分段锁
 
 ![img](https://i.loli.net/2021/09/27/NOriQmgV14ASlUw.png)
 
-JDK1.8的ConcurrentHashMap（TreeBin: 红黑二叉树节点 Node: 链表节点）：
+JDK1.8的ConcurrentHashMap（TreeBin: 红黑二叉树节点 Node: 链表节点）：synchronized+CAS
 
 ![img](https://i.loli.net/2021/09/27/dK7iFt4SagrOe5n.png)
 
 答：ConcurrentHashMap 结合了 HashMap 和 HashTable 二者的优势。HashMap 没有考虑同步，HashTable 考虑了同步的问题。但是 HashTable 在每次同步执行时都要锁住整个结构。 ConcurrentHashMap 锁的方式是稍微细粒度的。
 
 ## 3.14 ConcurrentHashMap 底层具体实现知道吗？实现原理是什么？
-JDK1.7
+>  JDK1.7
 
 首先将数据分为一段一段的存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据时，其他段的数据也能被其他线程访问。
 
-在JDK1.7中，ConcurrentHashMap采用Segment + HashEntry的方式进行实现，结构如下：
+在JDK1.7中，ConcurrentHashMap采用`Segment + HashEntry`的方式进行实现，结构如下：
 
 一个 ConcurrentHashMap 里包含一个 Segment 数组。Segment 的结构和HashMap类似，是一种数组和链表结构，一个 Segment 包含一个 HashEntry 数组，每个 HashEntry 是一个链表结构的元素，每个 Segment 守护着一个HashEntry数组里的元素，当对 HashEntry 数组的数据进行修改时，必须首先获得对应的 Segment的锁。
 
@@ -753,9 +784,10 @@ JDK1.7
 
 该类包含两个静态内部类 HashEntry 和 Segment ；前者用来封装映射表的键值对，后者用来充当锁的角色；
 Segment 是一种可重入的锁 ReentrantLock，每个 Segment 守护一个HashEntry 数组里得元素，当对 HashEntry 数组的数据进行修改时，必须首先获得对应的 Segment 锁。
-JDK1.8
 
-在JDK1.8中，放弃了Segment臃肿的设计，取而代之的是采用Node + CAS + Synchronized来保证并发安全进行实现，synchronized只锁定当前链表或红黑二叉树的首节点，这样只要hash不冲突，就不会产生并发，效率又提升N倍。
+> JDK1.8 
+
+在JDK1.8中，放弃了Segment臃肿的设计，取而代之的是采用Node + CAS + Synchronized来保证并发安全进行实现，`synchronized只锁定当前链表或红黑二叉树的首节点，这样只要hash不冲突，就不会产生并发`，效率又提升N倍。
 
 结构如下：
 
@@ -797,11 +829,12 @@ if (fh >= 0) {
 
 如果该节点是TreeBin类型的节点，说明是红黑树结构，则通过putTreeVal方法往红黑树中插入节点；如果binCount不为0，说明put操作对数据产生了影响，如果当前链表的个数达到8个，则通过treeifyBin方法转化为红黑树，如果oldVal不为空，说明是一次更新操作，没有对元素个数产生影响，则直接返回旧值；
 如果插入的是一个新节点，则执行addCount()方法尝试更新元素个数baseCount；
+
 # 4. 辅助工具类
 
 ## 4.1 Array 和 ArrayList 有何区别？
 
-Array 可以存储基本数据类型和对象，ArrayList 只能存储对象。
+Array 可以存储基本数据类型和引用数据类型，ArrayList 只能存储引用数据类型。
 Array 是指定固定大小的，而 ArrayList 大小是自动扩展的。
 Array 内置方法没有 ArrayList 多，比如 addAll、removeAll、iteration 等方法只有 ArrayList 有。
 对于基本类型数据，集合使用自动装箱来减少编码工作量。但是，当处理固定大小的基本数据类型的时候，这种方式相对比较慢。
@@ -814,15 +847,25 @@ List 转 Array：List 的 toArray() 方法。
 
 comparable接口实际上是出自java.lang包，它有一个 compareTo(Object obj)方法用来排序
 comparator接口实际上是出自 java.util 包，它有一个compare(Object obj1, Object obj2)方法用来排序
-一般我们需要对一个集合使用自定义排序时，我们就要重写compareTo方法或compare方法，当我们需要对某一个集合实现两种排序方式，比如一个song对象中的歌名和歌手名分别采用一种排序方法的话，我们可以重写compareTo方法和使用自制的Comparator方法或者以两个Comparator来实现歌名排序和歌星名排序，第二种代表我们只能使用两个参数版的Collections.sort().
+
+| 参数     | Comparable接口                                       | Comparator接口                     |
+| -------- | ---------------------------------------------------- | ---------------------------------- |
+| 排序逻辑 | 排序逻辑必须在待排序对象的类中，故称之为**自然排序** | 排序逻辑在另一个类中实现           |
+| 排序方法 | int compareTo(Object o1)                             | int compare(Object o1,Object o2)   |
+| 触发排序 | Collections.sort(List)                               | Collections.sort(List, Comparator) |
 
 ## 4.4 Collection 和 Collections 有什么区别？
 
 java.util.Collection 是一个集合接口（集合类的一个顶级接口）。它提供了对集合对象进行基本操作的通用接口方法。Collection接口在Java 类库中有很多具体的实现。Collection接口的意义是为各种具体的集合提供了最大化的统一操作方式，其直接继承接口有List与Set。
 Collections则是集合类的一个工具类/帮助类，其中提供了一系列静态方法，用于对集合中元素进行排序、搜索以及线程安全等各种操作。
+
 ## 4.5 TreeMap 和 TreeSet 在排序时如何比较元素？Collections 工具类中的 sort()方法如何比较元素？
 
-TreeSet 要求存放的对象所属的类必须实现 Comparable 接口，该接口提供了比较元素的 compareTo()方法，当插入元素时会回调该方法比较元素的大小。TreeMap 要求存放的键值对映射的键必须实现 Comparable 接口从而根据键对元素进 行排 序。
+TreeSet 要求存放的对象所属的类必须实现 Comparable 接口，该接口提供了比较元素的 compareTo()方法，当插入元素时会回调该方法比较元素的大小。
+
+TreeMap 要求存放的键值对映射的键必须实现 Comparable 接口从而根据键对元素进行排序。
+
+
 
 Collections 工具类的 sort 方法有两种重载的形式，
 
