@@ -223,8 +223,8 @@
         function(hook, vm) {
           hook.beforeEach(function (html) {
             var url = 'https://github.com/web-ws/JavaReader/tree/master/' + vm.route.file
-            var editHtml = '[📝 Edit the Document](' + url + ')\n'
-            var editHtml_end = '[🖊 Edit the Document](' + url + ')\n'
+            var editHtml = '[📝 Edit on GitHub](' + url + ')\n'
+            var editHtml_end = '[🖊 Edit on GitHub](' + url + ')\n'
             return '> Begin ' + editHtml
                  + html
                  + '\n----\n'
