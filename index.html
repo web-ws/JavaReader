@@ -8,11 +8,6 @@
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/vue.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/share.min.css">
-
-  <!-- 支持 LaTex 语言 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/custom.css">
-
   <!-- 自定义特色样式：by myself -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/css/me.css">
 
@@ -194,23 +189,31 @@
       // 笔记本名称
       name: '<p>📘 JavaReader</p>',
       // 笔记本链接
-      //nameLink: 'https://web-ws.github.io/JavaReader/#/README',
       nameLink: nameLink,
       // github图标
       repo: 'web-ws/JavaReader',
       // 切换页面后，跳转到顶部页面
       auto2top: true,
-      //让你的内容页在滚动到指定的锚点时，距离页面顶部有一定空间。
+      // 让你的内容页在滚动到指定的锚点时，距离页面顶部有一定空间。
       topMargin: 10,
       // 封面
       coverpage: true,
       // 封面和内容单独显示
       onlyCover: true,
       // 是否加载导航栏
-      //loadNavbar: true,
+      // loadNavbar: true,
       // 在小屏幕上,导航栏与侧边栏合并
       mergeNavbar: true,
-      externalLinkTarget: '_blank', //外链打开方式：_blank表示在新标签页中打开
+      notFoundPage: true,
+      // 外链打开方式：_blank表示在新标签页中打开
+      externalLinkTarget: '_blank',
+      // 页签
+      pagination: {
+        previousText: "上一篇",
+        nextText: "下一篇",
+        crossChapter: true,
+        crossChapterText: true,
+      },
       // 编辑当前文档按钮
       formatUpdated: '{YYYY}/{MM}/{DD} {HH}:{mm}',
       plugins: [
@@ -227,7 +230,7 @@
           })
         }
       ],
-      // 页面页脚
+      // 页脚
       footer: {
         copy: '<span>Copyright &copy; 2020 - 2021</span>',
         //copy: '<span id="sitetime"></span> <br/>',
@@ -243,7 +246,6 @@
         depth: 6,
         maxAge: 86400000, // 过期时间，单位毫秒，默认一天
       },
-      // End 搜索框
       // 字数统计
       count:{
         countable:true,
@@ -251,10 +253,33 @@
         color:'rgb(90,90,90)',
         language:'chinese'
       },
+      // 白夜切换
+      darklightTheme: {
+        defaultTheme: 'light',
+        siteFont: 'Source Sans Pro,Helvetica Neue,Arial,sans-serif',
+        codeFontFamily: 'Roboto Mono, Monaco, courier, monospace',
+        bodyFontSize: '15px',
+        dark: {
+          background: 'rgb(28,32,34)',
+          highlightColor: '#e96900',
+          codeBackgroundColor: 'rgb(34,39,46)',
+          codeTextColor: '#b4b4b4',
+        },
+        light: {
+          highlightColor: '#e96900',
+        }
+      },
     }
   </script>
   <!-- docsify插件 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify.min.js"></script>
+  <!-- 分页 -->
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-pagination.min.js"></script>
+  <!-- 复制剪贴板 -->
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-copy-code.min.js"></script>
+  <!-- 页脚功能 -->
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-footer-enh.min.js"></script>
+
   <!-- 搜索功能 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/search.min.js"></script>
   <!-- 图片缩放 -->
@@ -263,20 +288,15 @@
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/viz.js"></script>
   <!-- 支持 LaTex 语言 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-katex.js"></script>
-  <!-- 解析emoji -->
-  <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
-  <!-- 复制剪贴板 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-copy-code.min.js"></script>
-  <!-- 页脚功能 -->
-  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/docsify/docsify-footer-enh.min.js"></script>
   <!-- 字数统计 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/countable.js"></script>
-  <!-- mouse click -->
+  <!-- 鼠标点击 -->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/click_heart.js"></script>
-<!-- 访问量统计 (随机数) -->
-  <!--
-  <script async src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/busuanzi.pure.mini.js"></script>
-  -->
+  <!-- 白夜切换 -->
+  <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/js/index.js"></script>
+  <!-- 解析emoji -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/emoji.min.js"></script>
+
   <!-- 代码块样式优化-->
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-java.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/web-ws/JavaReader@master/plugins/prism/prism-python.js"></script>
@@ -316,54 +336,6 @@
     }
   </script>
 
-  <!-- 添加网站运行时间统计 -->
-  <script language=javascript>
-    function siteTime() {
-      window.setTimeout("siteTime()", 1000);
-      var seconds = 1000;
-      var minutes = seconds * 60;
-      var hours = minutes * 60;
-      var days = hours * 24;
-      var years = days * 365;
-      var today = new Date();
-      var todayYear = today.getFullYear();
-      var todayMonth = today.getMonth() + 1;
-      var todayDate = today.getDate();
-      var todayHour = today.getHours();
-      var todayMinute = today.getMinutes();
-      var todaySecond = today.getSeconds();
-      /* Date.UTC() -- 返回date对象距世界标准时间(UTC)1970年1月1日午夜之间的毫秒数(时间戳)
-      year - 作为date对象的年份，为4位年份值
-      month - 0-11之间的整数，做为date对象的月份
-      day - 1-31之间的整数，做为date对象的天数
-      hours - 0(午夜24点)-23之间的整数，做为date对象的小时数
-      minutes - 0-59之间的整数，做为date对象的分钟数
-      seconds - 0-59之间的整数，做为date对象的秒数
-      microseconds - 0-999之间的整数，做为date对象的毫秒数 */
-
-      /* 建站时间 */
-      var t1 = Date.UTC(2021, 09, 25, 15, 00, 00);
-      var t2 = Date.UTC(todayYear, todayMonth, todayDate, todayHour, todayMinute, todaySecond);
-      var diff = t2 - t1;
-      var diffYears = Math.floor(diff / years);
-      var diffDays = Math.floor((diff / days) - diffYears * 365);
-      var diffHours = Math.floor((diff - (diffYears * 365 + diffDays) * days) / hours);
-      var diffMinutes = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours) / minutes);
-      var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours - diffMinutes * minutes) / seconds);
-      document.getElementById("sitetime").innerHTML = " 本站已安全运行 " + diffYears + " 年 " + diffDays + " 天 " + diffHours + " 小时 " + diffMinutes + " 分 " + diffSeconds + " 秒 ";
-    };
-
-    window.onload = function() {
-      //siteTime();
-      // 设置导航栏的显示
-      //var hrefArr = ['http://localhost:3000/#/', 'https://web-ws.github.io/JavaReader/#/'];
-      //var app_nav = document.getElementsByTagName('nav');
-      //if (hrefArr.indexOf(location.href) > -1) {
-      //  app_nav[0].style.display = 'none';
-      //} else {
-      //  app_nav[0].style.display = 'block';
-      //}
-    }
   </script>
 
 </body>
