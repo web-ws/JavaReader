@@ -54,6 +54,8 @@ https://cdn.jsdelivr.net/gh/jquery/jquery以我一张图片为例：
 
 清理缓存后，重新加载新的内容，发现已经是最新的了。
 
+> 测试环境采用@latest模式获取最新的资源，生产环境采用@master模式
+
 ## 1.3 其他
 
 除了`jsdelivr`， 推荐几个免费的且不限流量的CDN，还有 `staticaly` `githack` 都是全球通用的，
