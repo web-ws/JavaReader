@@ -119,7 +119,6 @@ img,pre {
 }
 
 /* 添加代码块复制按钮样式 */
-
 .docsify-copy-code-button {
   background: #00a1d6 !important;
   color: #FFFFFF !important;
@@ -136,3 +135,15 @@ img,pre {
   top: 25px;
   right: -20px;
 }
+/*结束文章符号*/
+.over {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #000001;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 40px;
+  margin: 20px auto 5px;
+  text-shadow: 0 0 black;
+}
+
