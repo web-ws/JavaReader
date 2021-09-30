@@ -111,6 +111,11 @@ h1 span{
   font-weight: 400;
 }
 
+.medium-zoom-image {
+  width: 70%;
+  height: 70%;
+}
+
 /*End markdwon样式 */
 
 /*Begin 其他 */
