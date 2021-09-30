@@ -116,8 +116,8 @@ h1 span{
 /*Begin 其他 */
 img,pre {
   border-radius: 10px;
-  height: 70%;
-  width: 70%;
+  max-width: 70%;
+  max-height: 70%;
 }
 
 /* 添加代码块复制按钮样式 */
