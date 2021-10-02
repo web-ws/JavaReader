@@ -1,6 +1,7 @@
 .github-corner {
   z-index: 999;
 }
+
 .github-corner svg {
   width: 55px;
   height: 55px;
@@ -114,6 +115,10 @@ h1 span{
 .medium-zoom-image {
   width: 70%;
   height: 70%;
+}
+
+.markdown-section {
+  max-width: 90%;
 }
 
 /*End markdwon样式 */
