@@ -170,6 +170,11 @@ public class Singleton {
 
 ### AQS（AbstractQueuedSynchronizer） 队列同步器
 
+抽象同步器，它是全部锁的基础
+所谓锁就是`state`值啊，state大于0就是锁已被持有，记录currentThread。
+获取锁就是cas修改state为1，可重入就继续加1，释放锁-1，为0就释放了锁。
+双向队列保存申请锁的线程，公平锁就看下一个来cas改state的是不是表头。结合lock的lock和unlock看。
+
 - AQS 是一个 FIFO 的双向队列，有队首head和队尾tail元素，队列元素的类型为 Node 。
 - 实现锁或其他同步器的基础框架
 - 独占模式 EXCLUSIVE：如果一个线程获取到共享资源，修改状态state为1，表示该线程拥有该资源，其他线程尝试获取失败后被阻塞 。例如：`ReentrantLock`
@@ -209,8 +214,6 @@ public class Singleton {
 当队列满时，存储元素的线程会等待队列可用。
 
 - 阻塞队列常用于生产者和消费者的场景，生产者是往队列里添加元素的线程，消费者是从队列里拿元素的线程。阻塞队列就是生产者存放元素的容器，而消费者也只从容器里拿元素
-
-
 
 ```java
  public boolean offer(E e) {
@@ -277,9 +280,6 @@ public class Singleton {
 - 线程控制：挂起/停止/恢复
 - 线程间同步：countdownlatch（join）、回环屏障CyclicBarries、信号量Semaphore（递增） 
 
-
-
-
 ##  未提问内容
 
 # 3. JVM
@@ -303,25 +303,36 @@ public class Singleton {
 
 ## JVM调优
 
-- 查看系统负载情况：uptime
-- 参数配置：JAVA_OPTS="-XX:HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=\\\"，内存异常的时候，自动dump文件
-- 通过jps获取虚拟机进程号： jps -l
-- 导出内存使用情况到文件：jmap -dump:format=b,file=D:\dump\dumpName.hprof [pid]
-- 运行时观察gc情况：jstat -gc [pid] 间隔秒 循环次数
-- 查看大对象情况：jmap -histo [pid] |sort -k 2 -g -r |less
-- 分析Dump文件：通过jdk自身的visualVm 或者 eclipse MAT工具分析（疑点-查看线程栈，retainedHeap最大等等）
+> 简化步骤说明
 
-top命令：能够实时动态地监控并显示系统中各个进程的资源占用状况
+- 首先查看系统CPU负载情况，再看jdk进程号，可以直接导出hprof文件
+
+- 其次查看大对象情况以及查看GC情况
+
+> 详细步骤说明
+
+- 内存异常的时候，自动dump文件，参数配置：JAVA_OPTS="-XX:HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=\\\"，
+
+- 查看系统CPU负载情况： `uptime`；实时查看系统各个进程占用CPU的情况： `top`
+- 通过jps获取虚拟机进程号：` jps -l`
+- 导出内存使用情况到文件： `jmap -dump:format=b,file=D:\dump\dumpName.hprof [pid]`
+- 运行时观察gc情况： `jstat -gc [pid] 间隔秒 循环次数`
+- 查看大对象情况： `jmap -histo [pid] |sort -k 2 -g -r | less`
+- 分析Dump文件：通过jdk自身的 `visualVm` 或者 `eclipse MAT` 工具分析（疑点-查看线程栈，retainedHeap最大等等）
 
 ​    ![0](https://i.loli.net/2021/10/11/uY1BDpzOPSMjWUH.png)
 
 ## 类加载机制
+
+
 
 ## 垃圾回收算法以及垃圾收集器
 
 复制-新生代
 
 标记清理/标记压缩-老年代
+
+
 
 ## 未提问内容
 
@@ -514,6 +525,7 @@ bgsave
 
 setnx
 
+## 常规提问方式
 
 9.既然生成快照的中途依然可以执行Redis，那么从节点获取到快照是不完整的，如何同步？（主从同步，先建立连接，然后命令传播，两个结点中的buffer队列里存储一个offset，差值就是需要同步的值）
 
@@ -572,7 +584,6 @@ redis 突然set很多key，单线程会不会长时间阻塞
 
 ### 事务传播行为
 
-```java
 ```java
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -885,7 +896,7 @@ AngularJs
 
 > 项目介绍
 
-- 框架设计、业务日终/日间调度框架两部分、业务存储包一部分、自动化调度
+- 框架设计、日终/日间批处理框架两部分、业务存储包一部分、自动化调度
 - 与业务相关的所有内容：python 存储过程 jar包等等所有
 - 字典表如何设计，包含众多门类，方便后期维护，以及如何定义表字段设计规范
 
@@ -909,35 +920,285 @@ AngularJs
 
 
 
+规则梳理，抽象化，反射，
+
+读取excel数据
+
+
+
 
 
 
 
 ### 电商商城
 
-> 项目介绍
+![image-20211009162920534](https://i.loli.net/2021/10/11/YSjzJXpvcs9ieTE.png)
 
-
-
-> 技术难点/解决什么问题
-
-
-
-
-
-微服务架构的理解：
-
-- 单体 -》 SOA -》 微服务Spring Boot /Spring Clound Dubbo
-
-
+#### 项目介绍
 
 基于微服务架构搭建电商商城，系统分成应用层服务和业务层服务，应用层服务暴露前端调用接口，业务层服务供应用层服务或者服务与服务之间调用，暴露Dubbo服务（存在超时调用，默认1000ms，失败重试机制，默认重试2次，总共执行3次）。应用层服务分成后台管理服务，首页服务，商品详情服务；业务层服务分成首页广告服务，商品服务，页面服务。
 
 后台管理服务做商品数据/首页广告数据的CRUD。
 
-首页服务读取存储于缓存中的广告数据，数据库和缓存双写一致性，采用的先更新数据库，再删除缓存，缓存删除失败，采用消息队列失败重试机制删除，保证缓存最终是删除成功的，实现最终一致性，更新缓存的先删除缓存再更新，保证是最新的。如果说要强一致性，对同个数据的不同操作放到JVM队列当中有序执行，对后续重复更新缓存的操作给予过滤，避免重复操作。
 
-设置缓存的两种方式
+
+#### 技术难点/解决什么问题
+
+##### 项目架构设计理解
+
+> 接口规范：Swagger 
+
+[详情参考Swagger](/03框架/Swagger)
+
+
+> 跨域调用的过滤器：CorsFilter
+
+分成两个请求，发送`options预请求`，看看服务端是否允许发送包含 源信息 `Origin` /请求头部 `Headers` /请求方法 `Method`  的请求，`预响应`返回允许请求源，请求方法，请求头部，是否允许cookies；通过后才发送`正式请求`，返回`正式响应`。
+
+在启动类中加入 `corsFilter` 方法
+
+```java
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableZuulProxy
+public class GatewayBootstrap {
+
+    public static void main(String[] args) {
+        SpringApplication.run(GatewayBootstrap.class, args);
+    }
+  
+	// cors 跨域解决方案
+    @Bean
+    public FilterRegistrationBean corsFilter() {
+        final UrlBasedCorsConfigurationSource source = new 
+            UrlBasedCorsConfigurationSource();
+        final CorsConfiguration config = new CorsConfiguration();
+        //允许跨越发送cookie
+        config.setAllowCredentials(true);
+        //允许所有域名进行跨域调用
+        config.addAllowedOrigin("*");
+        //放行全部原始头信息
+        config.addAllowedHeader("*");
+        //允许所有请求方法跨域调用
+        config.addAllowedMethod("*");
+        config.setMaxAge(18000L);
+
+        source.registerCorsConfiguration("/**", config);
+        CorsFilter corsFilter = new CorsFilter(source);
+        FilterRegistrationBean filterRegistrationBean = new 
+            FilterRegistrationBean(corsFilter);
+        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return filterRegistrationBean;
+    }
+}
+```
+
+
+
+> 如何解决验证码服务给我们暴露的http请求接口
+
+`模拟http客户端`调用http服务端发请求，验证码服务接口获取验证码
+
+`RestTemplate`是Spring提供的用于访问RESTful服务的客户端，RestTemplate提供了多种便捷访问远程Http服务的方法
+
+RestTemplate默认依赖JDK提供http连接的能力（HttpURLConnection）
+
+使用`OKhttp客户端`请求RESTFUL的服务端
+
+服务层与服务层调用
+
+```
+import org.springframework.web.client.RestTemplate;
+String forObject = restTemplate.getForObject("http://localhost:9013/communication/hello", String.class);
+```
+
+##### 微服务Spring Boot
+
+单体 -》 SOA -》 微服务Spring Boot /Spring Clound Dubbo
+微服务使用spring boot搭建。
+
+@SpringBootApplication 
+
+> Spring Boot 配置文件加载顺序
+
+
+
+> Spring Boot 配置的规则
+
+
+
+
+
+> yaml文件格式 支持 对象（键值对的集合，映射，字典）/数组/纯量
+
+
+
+
+
+##### Spring Cloud alibaba/Netflix
+
+> 注册中心和服务发现
+
+![image-20211011154356018](https://i.loli.net/2021/10/11/bhEO3RuQsJk24FS.png)
+
+上报服务地址-》服务注册列表 -》获取服务地址（多个服务地址采用`客户端负载均衡Ribbon`的方式获取其中一个）
+
+```yaml
+nacos‐restful‐provider:
+ribbon:
+NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+```
+
+配置服务发现中心的地址，集群名称，命名空间，
+
+多租户隔离：集群名称 cluster-name
+
+租户内隔离：命名空间 namespace （开发/测试/生产环境）
+
+租户相当系统，拥有自己所属集群，
+
+> 配置中心nacos
+
+@EnableDiscoveryClient :都是能够让注册中心能够发现，扫描到该服务。
+
+修改配置文件 -》 获取配置通知 -》 获取最新配置
+
+配置文件名称=服务名称+扩展名 spring-boot-http.yaml
+
+重要参数
+        ext-config：
+        namespace（开发/测试/生产环境）
+        group（子项目：公共服务/支付服务/商品服务/订单服务/支付服务/邮件服务）
+        dataid（工程）
+
+```yaml
+server:
+  port: 57010 #启动端口 命令行注入
+  max-http-header-size: 100KB
+
+nacos:
+  server:
+    addr: 127.0.0.1:8848
+
+spring:
+  application:
+    name: merchant-application
+  main:
+    allow-bean-definition-overriding: true # Spring Boot 2.1 需要设定
+  cloud:
+    nacos:
+      discovery:    # 服务注册与发现
+        server-addr: ${nacos.server.addr}
+        namespace: 611b745b-50b4-492b-8888-536d0b1cc7f7
+        cluster-name: DEFAULT
+      config:      # 配置管理
+        server-addr: ${nacos.server.addr} # 配置中心地址
+        # 和上面的服务名称组合成 merchant-application.yaml 作为nacos配置管理的配置项
+        file-extension: yaml 
+        namespace: 611b745b-50b4-492b-8888-536d0b1cc7f7 # 命令行注入
+        group: SHANJUPAY_GROUP # 聚合支付业务组
+        ext-config:
+        -
+          refresh: true
+          data-id: spring-boot-http.yaml # spring boot http配置
+          group: COMMON_GROUP # 通用配置组
+  #SpringMVC上传文件配置
+  servlet:
+    multipart:
+      #默认支持文件上传.
+      enabled: true
+      #支持文件写入磁盘.
+      file-size-threshold: 0
+      # 上传文件的临时目录
+      location:
+      # 最大支持文件大小
+      max-file-size: 1MB
+      # 最大支持请求大小
+      max-request-size: 30MB
+
+dubbo:
+  scan:
+    # dubbo 服务扫描基准包
+    base-packages: com.shanjupay
+  protocol:
+    # dubbo 协议
+    name: dubbo
+    port: 20891
+  registry:
+    address: nacos://127.0.0.1:8848
+  application:
+    qos:
+      port: 22310 # dubbo qos端口配置  命令行注入
+  consumer:
+    check: false
+    timeout: 3000
+    retries: -1
+
+logging:
+  config: classpath:log4j2.xml
+```
+
+
+
+> 分布式服务框架Dubbo
+
+服务与服务之间调用采用Dubbo， `@Service` 注册服务， `@Reference` 引用服务。
+
+Dubbo设置调用 `超时timeout`  和是否 `重试retries` ，-1不重试。默认重试2次，请求3次
+
+
+
+> 网关：nginx和zuul/gateway
+
+前端访问微服务需要通过网关，网关采用的是 `nginx` 和 `zuul/gateway` 实现。nginx主要做负载均衡的操作，zuul过滤用户请求和判断用户身份，结合spring security来过滤链做实现登录/退出工作。
+
+a. 加入依赖
+
+```xml
+ <dependency>
+     <groupId>org.springframework.cloud</groupId>
+     <artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+</dependency>
+```
+
+
+
+b. 继承ZuulFilter类，重写抽象方法，ZuulFilter实现`Comparable<T>接口的CompareTo()`方法
+
+- filtertype：pre(前) routing（执行服务时） post（后） error（错误）
+
+- shouldFilter：true，采用zuul过滤方式
+
+- filterOrder：数值越小优先级越高
+- run()：具体的业务逻辑
+
+c. 启动类添加`@EnableZuulProxy`注解启用Zuul的API网关功能，并且添加自定义的Zuul实现
+
+```java
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableZuulProxy
+public class GatewayBootstrap {
+
+    public static void main(String[] args) {
+        SpringApplication.run(GatewayBootstrap.class, args);
+    }
+    // zuul的实例
+    @Bean
+    public AuthFilter preFileter() {
+        return new AuthFilter();
+    }
+}
+```
+
+
+
+##### 缓存Redis
+> 数据库和缓存双写的一致性问题
+
+首页服务读取存储于缓存中的广告数据，数据库和缓存双写一致性，采用的`先更新数据库，再删除缓存`，缓存删除失败，采用`消息队列失败重试机制删除`，保证缓存最终是删除成功的，`实现最终一致性`，更新缓存的先删除缓存再更新，保证是最新的。如果说要强一致性，对同个数据的不同操作放到`JVM队列`当中有序执行，对后续重复更新缓存的操作给予过滤，避免重复操作。
+
+- 设置缓存的两种方式
 
 redisTemplate.boundXXXOps(XXX).set(value)
 
@@ -945,7 +1206,8 @@ redisTemplate.opsForXXX().set(key, value, timeout)
 
 详情参考：https://blog.csdn.net/lydms/article/details/105224210
 
-key：服务名称-商品分类-商品id，value：list对象转换成JSON对象
+
+- key：服务名称-商品分类-商品id，value：list对象转换成JSON对象
 
 存入：JSON.*toJSON*(payChannelParamDTOS).toString()
 
@@ -953,37 +1215,13 @@ key：服务名称-商品分类-商品id，value：list对象转换成JSON对象
 
 ​    ![0](https://i.loli.net/2021/10/11/Y6Wk2hsOij1HNZF.png)
 
-商品详情服务把审核通过后的商品，通过Freemarker技术实现页面静态化，以此减少访问数据库、服务器的压力。
+##### 消息队列 RocketMQ
 
-接口规范：Swagger 
+商品审核通过后，商品服务使用消息队列RocketMQ通知商品详情页服务实现商品页面静态化，以此减少访问数据、服务器压力
 
-引入Springfox依赖
 
-添加两个配置类：
 
-SwaggerConfiguration @EnableSwagger2 ，指定头部信息，包含标题、联系人、版本等，扫描的Controller包
-
-WebMvcConfig implement WebMvcConfigurer接口，添加静态资源文件外部可以直接访问，让外部访问swagger文档，
-
-访问方式地址:端口号/内容路径/swagger-ui.html
-
-设置类，方法，请求参数，实体模型+模型属性的具体的定义
-
-服务与服务之间调用采用Dubbo，@Service注册服务，@Reference引用服务。
-
-注册中心与配置管理采用nacos
-
-微服务使用spring boot搭建。
-
-前端访问微服务需要通过网关，网关采用的是nginx和zuul/gateway实现。nginx主要做负载均衡的操作，zuul过滤用户请求和判断用户身份，结合spring security来过滤链做实现登录/退出工作。
-
-跨域调用的过滤器：CorsFilter
-
-分成两个请求，发送options预请求，看看服务端是否允许发送包含 源信息Origin/请求头部Headers/请求方法Method 的请求，预响应返回允许请求源，请求方法，请求头部，是否允许cookies；通过后才发送正式请求，返回正式响应。
-
-Dubbo设置调用超时和是否重试，-1不重试
-
-本项目选用RocketMQ的一个主要原因如下 ：
+> 本项目选用RocketMQ的一个主要原因如下 
 
 1、支持事务消息
 
@@ -992,16 +1230,4 @@ Dubbo设置调用超时和是否重试，-1不重试
 3、天然支持集群、负载均衡
 
 4、支持指定次数和时间间隔的失败消息重发
-
-自动化注入 prefrenceAreaMapper 找不到
-
-@SpringBootApplication 
-
-Spring Boot 配置文件加载顺序
-
-Spring Boot 配置的规则
-
-yaml文件格式 支持 对象（键值对的集合，映射，字典）/数组/纯量
-
-服务发现与调用
 

@@ -1,16 +1,18 @@
 
 
-
+# 1. 简单介绍
 
 Swagger 是一个规范和完整的框架，用于生成、描述、调用和可视化 RESTful 风格的 Web 服务(https://swagger.io/)。 它的主要作用是：
+
 1、使得前后端分离开发更加方便，有利于团队协作
+
 2、接口的文档在线自动生成，降低后端开发人员编写接口文档的负担
 
-## 如何使用？
+# 2. 如何使用？
 
 项目中SpringBoot集成Swagger，Spring已经将Swagger纳入自身的标准，通过在项目中引入`Springfox` ，即可非常简单快捷的使用Swagger。
 
-### 添加依赖
+## 2.1 添加依赖
 
 在XXXX-common项目中添加依赖，只需要在XXXX-common中进行配置即可，因为其他微服务工程都直接或间接依赖XXXX-common。
 
@@ -30,13 +32,13 @@ Swagger 是一个规范和完整的框架，用于生成、描述、调用和可
 </dependency>
 ```
 
-### 在config包中添加Swagger配置类
+## 2.2 添加SwaggerConfiguration类
 
-@EnableSwagger2 ，
+- 添加@EnableSwagger2
 
-指定头部信息，包含标题、联系人、版本等，
+- 指定头部信息，包含标题、描述信息、联系人、版本等，
 
-扫描的Controller包
+- 扫描的Controller包
 
 ```java
 package com.shanjupay.merchant.config;
@@ -94,7 +96,7 @@ public class SwaggerConfiguration {
 
 ```
 
-### 添加SpringMVC配置类：WebMvcConfig，让外部可直接访问Swagger文档
+## 2.3 添加SpringMVC配置类，实现WebMvcConfigurer接口
 
 添加静态资源文件外部可以直接访问。
 
@@ -130,23 +132,20 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 ```
 
+## 2.4 效果如下
 
+访问方式
 
-
+- 地址:端口号/内容路径/swagger-ui.html
+```html
+http://localhost:57010/merchant/swagger-ui.html
+```
 
 ![image-20211011102238715](https://i.loli.net/2021/10/11/iVQFbeqJSndRIzg.png)
 
+# 3. 常用注解@ApiXXX
 
-
-
-
-
-
-## 常用注解
-
-`@ApiXXX`
-
-### 类 -》 方法 -》请求参数
+## 3.1 类 -》 方法 -》请求参数
 
 @Api：修饰整个类，描述Controller的作用 
 
@@ -212,7 +211,7 @@ public class AppController {
 }
 ```
 
-### 实体模型+模型属性
+## 3.2 实体模型+模型属性
 
 @ApiModel：用对象来接收参数
 
@@ -235,7 +234,7 @@ public class AbilityDTO implements Serializable {
 }
 ```
 
-### 其他
+## 3.3 其他
 
 @ApiResponse：HTTP响应其中1个描述
 
@@ -244,3 +243,4 @@ public class AbilityDTO implements Serializable {
 @ApiIgnore：使用该注解忽略这个API
 
 @ApiError ：发生错误返回的信息
+
