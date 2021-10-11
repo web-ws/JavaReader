@@ -65,6 +65,7 @@
 
 - [CS-Notes](http://www.cyc2018.xyz/)
 - [JavaGuide](https://snailclimb.gitee.io/javaguide/#/)
+- [mall](http://www.macrozheng.com/#/)
 
 # Markdown
 - [Markdown说明手册](https://markdown.com.cn/basic-syntax/)
