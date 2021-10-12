@@ -984,15 +984,21 @@ AngularJs
 
 #### 项目介绍
 
-构建全流程电子信息化的资产证券化管理系统，包含资产预选、资产备选、资产入库、资产交割、资产回购、资产财务处理、资产报表、服务商报告等功能。
+整合资产证券化业务流程，构建全流程电子信息化的资产证券化管理系统，涵盖：资产预选、资产备选、资产入库、资产交割、资产回购、资产财务处理、资产报表、服务商报告等功能。
 
 
 
-后台管理系统：流程化运作。增删改。
+我主要完成部分流程的功能设计、CRUD工作以及全权负责批处理框架搭建以及存储包数据处理开发。
 
-功能模块设计
+`功能设计` ：模块切分，流程细分；按系统间
 
-字典表设计
+`模型设计 `：业务表设计，字典表设计，字段状态，主键，索引，分区。
+
+`批处理框架设计` ：支持失败重跑机制，并发调度机制，不支持重跑机制，按日/按月调度机制、循环等待处理、不可重复操作等机制。
+
+`数据处理设计` ：总-分，模块化 BEGIN EXCEPTION END;
+
+`调度作业配置管理` ：
 
 
 
@@ -1008,11 +1014,7 @@ AngularJs
 
 程序逻辑：总分总的结构逻辑
 
-打通shell调Oracle 、 jar 包、 python程序
-
-
-
-
+打通Shell调Oracle、jar 包、python程序
 
 
 
@@ -1021,52 +1023,144 @@ AngularJs
 
 
 - 框架设计、日终/日间批处理框架两部分、业务存储包一部分、自动化调度
+
 - 与业务相关的所有内容：python 存储过程 jar包等等所有
+
 - 字典表如何设计，包含众多门类，方便后期维护，以及如何定义表字段设计规范
 
 
 
-
-
 #### 技术难点/解决什么问题
-
-
-
-
 
 ### 调度平台调整
 
 #### 项目介绍
 
+为更好的灵活配置、管理和监控作业，调度方式由Linux系统自带的调度方式切换至Control-M工具，最后切换至新一代调度平台，从而实现作业的 `精细化、模块化、图形化和告警通知 `的管理。
+
+完成作业分类归纳整理：通过对作业重要程度和系统资源使用的切分，从而使得系统资源得到充分使用，保证系统的健康运行；通过对功能模块的设计让作业支持 `失败重跑、并发调度` 等机制，从而增强作业的 `健壮性、实用性和灵活性`。
+
+
+
+`灵活配置和管理` 关键作业与非关键作业系统资源的划分，作业告警（运行告警，执行失败告警），失败重试，监控作业完成情况（未开始，运行中，成功/失败），并发调度。
+
 
 
 #### 技术难点/解决什么问题
 
+##### 调度平台自身
+
+拆分原则： `高内聚，低耦合，闭环开发` 设计是宏观的，拆分内容是微观的。
+
+> 作业配置如何合理定义作业流/作业名称？方便后期维护和迭代新增，开始与结束时间？作业流是否并行跑？是否支持重跑？是否需要告警，通过短信/邮箱等等通知方式？如何拆分关键与非关键作业，充分使用系统资源，互不影响？作业是否需要并发调度？
 
 
-规则梳理，抽象化，反射，读取excel数据
 
+> 依赖关系
 
-
-
-
-> 作业配置
-
-如何合理定义作业流？作业？开始与结束时间？是否并发跑？是否支持重跑？是否需要告警？短信/邮箱等等？
-
-> 作业依赖
-
-作业之间的依赖如何设置？长依赖如何拆分？耗时作业如何拆分？如何拆分关键作业/非关键作业，充分利用系统资源，互不影响？
+作业流、作业之间的依赖如何配置？长依赖作业如何拆分？执行时间长的作业如何拆分？拆分后不影响被依赖作业的执行？
 
 > 资源使用
 
-如何定义系统资源，系统资源得到充分使用，并且不影响业务正常操作？作业执行时间点如何设置？
+如何定义系统资源，让作业调度充分使用系统资源，并且不影响其他程序正常运行？是否多个环境运行？
+
+> 从作业配置，依赖关系，资源使用这几点，拓展开来就是 模块功能如何设计？如何拆分、细化？如何支持重跑？幂等性？补偿机制？实现最终一致性或强一致性。
 
 
 
+##### 工具类的设计
+
+工具类流程设计： `读取-》检查-》转换-》写入-》导出`
 
 
 
+域-组件-作业流-作业
+
+`模型数据`：读excel对象，组成读取类，每个sheet对象是一个list属性；写excel对象，组成写入类，每个sheet对象是一个list属性
+
+`动作类`：配置类（读文件/写文件/规则文件）、读取类、规则校验类、转换类、写入类
+
+`工具类`：Guaua辅助校验：字符串/空值
+
+`启动类`：BootBstc
+
+
+
+`读取` 输入到内存：FileInputStream()、XSSWorkbook
+
+```java
+public ExcelOutBo read() throws IOException {
+    FileInputStream fs = new FileInputStream(cfgExcel);
+    workbook = new XSSFWorkbook(fs);
+
+    ExcelOutBo excelOutBo = new ExcelOutBo();
+    excelOutBo.setFlow(readFlows());
+    excelOutBo.setFlowPub(readFlowPub());
+    excelOutBo.setJob(readJobs());
+    excelOutBo.setJobPub(readJobPub());
+    excelOutBo.setBranch(readBranch());
+    excelOutBo.setResource(readResource());
+    excelOutBo.setNode(readNode());
+
+    fs.close();
+    return excelOutBo;
+}
+```
+
+`导出`
+
+```java
+public void export() {
+   //
+   FileInputStream fi =null;
+   FileOutputStream fo = null;
+
+   try {
+      //拷贝一份模板文件
+      File tpl = new File(checkNotNull(tplExcel));
+      //打开文件
+      fi = new FileInputStream(tpl);
+      workbook = new XSSFWorkbook(fi);
+      //
+      System.out.println("[信息] 开始导出");
+
+      exportFlowControl(data);
+      exportFlowSchedule(data);
+      exportFlowDenpend(data);
+      exportJobControl(data);
+      exportJobSchedule(data);
+      exportJobDenpend(data);
+      exportResource(data);
+      exportNode(data);
+
+      //
+      System.out.println("[信息] 写入数据--Writing file");
+      fo = new FileOutputStream(this.outExcel);
+      this.workbook.write(fo);
+      fo.flush();
+
+      System.out.println("[信息] 导出完毕");
+   } catch (Exception e) {
+      System.out.println("[信息] 导出失败--" + e.getMessage());
+      e.printStackTrace();
+   } finally {
+      try {
+         if(null != fo) {
+            fo.close();
+         }
+
+         if(null != this.workbook) {
+            this.workbook.close();
+         }
+         if (null != fi) {
+            fi.close();
+         }
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+   }
+}
+```
 
 ### 电商商城
 

@@ -2074,8 +2074,9 @@ Jedis是Redis的Java实现的客户端，其API提供了比较全面的Redis命�
 
 类似于懒加载的思想，需要用的时候才取。
 
-
 ### 12.2.1 延时双删策略
+
+> ​	缺陷：如何解决先删缓存，带来的缓存击穿问题？把数据库宕机怎么办？
 
 在写库前后都进行redis.del(key)操作，并且设定合理的超时时间。具体步骤是：
 
@@ -2110,6 +2111,17 @@ public void write(String key,Object data){
 结合双删策略+缓存超时设置，这样最差的情况就是`在超时时间内数据存在不一致，而且又增加了写请求的耗时`。
 
 ### 12.2.3 如何写完数据库后，再次删除缓存成功？
+
+```java
+public void set(key, value) {
+    putToDb(key, value);
+    deleteFromRedis(key);
+
+    // ... a few seconds later
+    deleteFromRedis(key);
+}
+
+```
 
 上述的方案有一个缺点，那就是操作完数据库后，由于种种原因删除缓存失败，这时，可能就会出现数据不一致的情况。这里，我们需要提供一个保障重试的方案。
 
