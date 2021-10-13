@@ -39,9 +39,31 @@
 
 ### HashMap工作原理和扩容机制
 
-​       ![0](https://i.loli.net/2021/10/12/Rygi1XrvnaodOKI.png)（图中有个错误的地方，链表长度是否>=8，否，链表插入，key存在，则退出，不存在，则把当前值赋值给遍历节点)
+> 核心思想（必看HashMap+ConcurrentHashMap+线程安全）
+
+`数据结构` ：结合 `数组快速查找`+ `链表/红黑树快速增删` 的特性设计成桶数组的数据结构。
+
+`两次扰动获得数组元素的位置`：通过 key 的hash 后，再把hash值 `高低位异或`，再 与 数组容量长度-1 做`与运算`。
+
+`首次扩容和超阈扩容`：`tableSizefor` 容量大小都是2的幂次方，便于做与运算，减少碰撞；新容量和阈值都扩容为原来的2倍。
+
+`扩容后元素位置的变化`：要么停留在原始位置，要么移动到 `原始位置+旧容量` 这个位置上。
+
+`解决key值重复，如何存储数组` ：数组元素位置相同，hash值相同，key值相同直接 `覆盖`，不相同，遍历链表，以 `尾插法`的形式添加新节点。
+
+`链表和红黑树的转换`：链表长度大于 `8`，并且数组长度大于 `64`，转换为红黑树，红黑树节点数小于 `6`，转换成链表。
+
+`红黑树`：红黑树是解决二叉查找树的顶端优势的解决方案，根据三个原则：`这个树由红色和黑色组成，树的根元素是黑色，不允许相邻节点颜色为红色` ，产生了 `重新着色recolor` 和 `旋转rotation` 策略。
+
+`线程安全问题`：`链表头节点存储元素` 统计存放元素`++size`，ABA，原来的A已经不是原来的A，通过concurrentHashMap解决线程安全的问题。
+
+`线程安全ConcurrentHashMap`：通过 `Synchronized` 与 `Unsafe的CAS方法` 共同完成线程安全操作。`设置节点`，`复制节点`到扩张后的table时采用Synchronized同步机制。`获得阈值SizeCtl` 或 `某个节点`时采用Unsafe的CAS方法；扩容方法 `tryPresize`；添加元素时，检测到某个元素的hash为MOVED，帮助数组扩容 `helpTransfer`；
+
+​       ![0](https://i.loli.net/2021/10/12/Rygi1XrvnaodOKI.png)
 
 
+
+（图中有个错误的地方，链表长度是否>=8，否，链表插入，key存在，则覆盖；不存在，则从头遍历到链表尾节点，插入链表尾部节点)
 
 > 数据结构
 
@@ -49,11 +71,11 @@
 - 链表解决hash冲突，当具有相同的hash值时，通过equals遍历查找对应的key
 - 得到键的哈希码，然后高低位异或运算获得键的hash值，再把键的hash值与数组的长度-1做与运算获得桶数组的下标。 (table.length()-1) & hash
 - Node[] table
-- 装载因子/阈值/容量
+- 装载因子0.75/阈值/容量
 
 > 扩容机制
 
-- 新容量/新阈值都扩充为原值的2倍（左移）（新容量小于最大容量并且老容量大于最小初始化容量）
+- 为指定容量，`首次扩容` 的容量为16，阈值为12；`往后扩容` 的新容量/新阈值都扩充为原值的2倍（左移）（新容量小于最大容量并且老容量大于最小初始化容量）
 - 调用有参/无参构造函数创建map 以及 map已经存在元素的情况下，对 新容量和新阈值 赋值操作。
 - 链表和红黑树的转换：
 - 链表长度大于8并且数组长度大于64的时候，链表转换成红黑树，红黑树的low/high 的TreeNode的长度小于的6的时候，转换成链表
@@ -61,11 +83,13 @@
 - 数组的容量总是为2的N次方数，tableSizeFor()
 - 扩容后，低位链表元素的放在原来位置，高位元素位置=原位置+原数组容量。
 
+#### 红黑树
+
+红黑树是解决二叉查找树的顶端优势的解决方案，根据三个原则：`这个树由红色和黑色组成，树的根元素是黑色，不允许相邻节点颜色为红色` ，产生了 `重新着色recolor` 和 `旋转rotation` 策略。
 
 
-> 红黑树
 
-![](https://i.loli.net/2021/10/11/hYkMz8Hy3plfA6u.jpg)
+<img src="https://i.loli.net/2021/10/11/hYkMz8Hy3plfA6u.jpg" style="zoom: 33%;" />
 
 > 简述
 
@@ -126,20 +150,29 @@
 
 假设我们插入的新节点为 X
 
-   1. 将新插入的节点标记为红色
+1. 将新插入的节点标记为红色
 
-   2. 如果 X 是根结点(root)，则标记为黑色
+2. 如果 X 是根结点(root)，则标记为黑色
 
-   3. 如果 X 的 parent 是红色，同时 X 也不是 root:
+3. 如果 X 的 parent 是红色，同时 X 也不是 root:
+   
       3.1 如果 X 的 uncle (叔叔) 是红色
-         3.1.1 将 parent 和 uncle 标记为黑色
-         3.1.2 将 grand parent (祖父) 标记为红色
-         3.1.3 让 X 节点的颜色与 X 祖父的颜色相同，然后重复步骤 2、3
+
+      - 3.1.1 将 parent 和 uncle 标记为黑色
+
+      - 3.1.2 将 grand parent (祖父) 标记为红色
+
+      - 3.1.3 让 X 节点的颜色与 X 祖父的颜色相同，然后重复步骤 2、3
+
       3.2 如果 X 的 uncle (叔叔) 是黑色，我们要分四种情况处理
-         3.2.1 左左 (P 是 G 的左孩子，并且 X 是 P 的左孩子)  -》 拉起P，交换 P 和 P的父节点颜色
-         3.2.2 左右 (P 是 G 的左孩子，并且 X 是 P 的右孩子)  -》 左旋 再按照左左规则
-         3.2.3 右右 (和 3.2.1 镜像过来，恰好相反)  -》 拉起P，交换 P 和 P的父节点颜色
-         3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
+
+      - 3.2.1 左左 (P 是 G 的左孩子，并且 X 是 P 的左孩子)  -》 拉起P，交换 P 和 P的父节点颜色
+
+      - 3.2.2 左右 (P 是 G 的左孩子，并且 X 是 P 的右孩子)  -》 左旋 再按照左左规则
+
+      - 3.2.3 右右 (和 3.2.1 镜像过来，恰好相反)  -》 拉起P，交换 P 和 P的父节点颜色
+
+      - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
 
 
 
@@ -179,7 +212,7 @@ public class Singleton {
 
 # 2. Java高级
 
-## 多线程
+## 2.1 多线程
 
 ### 线程安全的问题（工作内存+主内存的转换）put()方法
 
@@ -194,9 +227,42 @@ public class Singleton {
 
 - 继承Thread类
 - 实现Callable和Runnable接口
-- Callable接口通过异步的方式获取返回值和异常（FutureTask.get()）
+  - Callable接口通过异步的方式获取返回值和异常（FutureTask.get()）
 
 ### 线程池的问题
+
+![](https://i.loli.net/2021/10/13/mJKChgdQ875HMX9.png)
+
+​    ![0](https://i.loli.net/2021/10/13/qEOhTQMb97r1dzR.jpg)
+
+```java
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue,
+                          ThreadFactory threadFactory,
+                          RejectedExecutionHandler handler) {
+    if (corePoolSize < 0 ||
+        maximumPoolSize <= 0 ||
+        maximumPoolSize < corePoolSize ||
+        keepAliveTime < 0)
+        throw new IllegalArgumentException();
+    if (workQueue == null || threadFactory == null || handler == null)
+        throw new NullPointerException();
+    this.acc = System.getSecurityManager() == null ?
+        null :
+    AccessController.getContext();
+    this.corePoolSize = corePoolSize;
+    this.maximumPoolSize = maximumPoolSize;
+    this.workQueue = workQueue;
+    this.keepAliveTime = unit.toNanos(keepAliveTime);
+    this.threadFactory = threadFactory;
+    this.handler = handler;
+}
+```
+
+#### 参数、工作流程、线程池状态
 
 > 七大参数
 
@@ -208,27 +274,38 @@ public class Singleton {
 - 阻塞队列
 - 拒绝策略
 
+> 拒绝策略
+
+![image-20211013141755537](https://i.loli.net/2021/10/13/MjxrzJZ1pUD3GO5.png)
+
+拒绝策略就是当队列满并且线程池的所有线程（ `核心线程+非核心线程` ）都不空闲时，线程如何去处理新来的任务。
+
+| 拒绝策略类型                      | 说明                                                         | 应用场景                                                     |
+| --------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| CallerRunsPolicy() 调用者运行策略 | 只要线程池没有关闭，就由提交任务的 `当前线程处理`。          | 一般在不允许失败、对性能要求不高、并发量较小的场景下使用。   |
+| `AbortPolicy() 终止策略`          | 当触发拒绝策略时，直接抛出拒绝执行的 `异常`                  | `默认策略`                                                   |
+| DiscardPolicy() 丢弃策略          | 直接 `丢弃`这个任务，不触发任何动作                          | 提交的任务无关紧要，一般用的少。                             |
+| DiscardOldestPolicy() 弃老策略    | 弹出队列头部的元素，然后尝试执行，相当于排队的时候把第一个人打死，然后自己代替 | 发布消息、修改消息类似场景。当老消息还未执行，此时新的消息又来了，这时未执行的消息的版本比现在提交的消息版本要低就可以被丢弃了。 |
+
 > 工作流程
 
 - 检查线程池的状态RUNNING  rs（线程池状态） | wc（工作线程数）
 - 线程池的线程个数小于核心线程数，则会调用核心线程执行该任务，
 - 线程池的线程个数大于核心线程数，则会把任务放入到阻塞队列中，
-- 线程池的线程个数大于核心线程数并且阻塞队列已满，调用非核心线程执行从阻塞队列中获取任务并执行。
+- 线程池的线程个数大于核心线程数并且阻塞队列已满，调用非核心线程执行从阻塞队列中获取 `poll`任务并执行。
 - 线程池的线程个数大于最大线程数，阻塞队列已满，则会调用阻塞策略（默认终止策略，丢弃任务并抛出RejectExecutionException异常）
 
-> 任务管理与线程管理的配合
-
-- 从阻塞队列中获取任务进行调度执行。
-- 非核心线程：workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
-- 核心线程：workQueue.take();
-
-> 线程空闲后如何回收
-
-- 调用方法：processWorkerExit()方法 + interruptIdleWorkers(false) 方法
-- 可重入锁的方式实现 统计已完成任务总数，去除HashSet存储的该工作线程的引用。
-- 循环遍历HashSet中的工作线程，如果该工作线程没有被中断以及处于空闲状态（没有处于AQS独占状态1），则中断该空闲线程
-
 > 线程池的状态
+
+​    ![0](https://i.loli.net/2021/10/13/k8EUN2wAgFBij5Y.jpg)
+
+- RUNNING 是运行状态，指可以接受任务执行队列里的任务
+- SHUTDOWN 指调用了 shutdown() 方法，不再接受新任务了，但是队列里的任务得执行完毕。
+- STOP 指调用了 shutdownNow() 方法，不再接受新任务，同时抛弃阻塞队列里的所有任务并中断所有正在执行任务。
+- TIDYING（收拾，使整齐） 所有任务都执行完毕，在调用 shutdown()/shutdownNow() 中都会尝试更新为这个状态。
+- TERMINATED 终止状态，当执行 terminated() 后会更新为这个状态。
+
+#### 任务管理与线程管理
 
 > 任务管理
 
@@ -237,11 +314,82 @@ public class Singleton {
 - 如果线程已经处于空闲状态（没有独占锁），则采用中断的方式释放锁。
 - await()纳秒级别的超时等待，循环等待条件是否满足（防止虚假唤醒）/signal signalAll interrupted 超时等待
 
+> 任务管理与线程管理的配合
+
+- 从阻塞队列中获取任务进行调度执行。
+- 非核心线程：`workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS)` 
+- 核心线程：`workQueue.take()`;
+
+> 线程空闲后如何回收
+
+（核心线程 `allowcorethreadtimeout 为true` + `非核心线程超时KeepAliveTime`）
+
+- 调用方法：processWorkerExit()方法 + interruptIdleWorkers(false) 方法
+- 可重入锁的方式实现 统计已完成任务总数，移除 `HashSet` 存储的该工作线程的 `引用`。
+- 循环遍历HashSet中的工作线程，如果该工作线程没有被中断以及处于空闲状态（没有处于 `AQS独占状态`1），则中断该空闲线程
+
+#### 动态化线程池
+
+> 合理配置线程
+
+- IO 密集型任务：尽可能的多配置线程
+- CPU 密集型任务：应当分配较少的线程（大量复杂的运算）
+
+根据系统的环境动态设置核心线程数目与最大线程数，配置人工调参，外加系统资源使用监控，负载监控和告警，动态调参
+
+> 线程池的创建方式
+
+- `FixedThreadPool` 和 `SingleThreadPool`： 允许的请求队列长度为 Integer.MAX_VALUE，可能会堆积大量的请求，从而导致 `OOM`
+- `CachedThreadPool`： 允许的创建线程数量为 Integer.MAX_VALUE，可能会创建大量的线程，从而导致 OOM
+- 使用ThreadPoolExecutor自定义创建
+
+```java
+// 自定义线程池
+ExecutorService threadPool = new ThreadPoolExecutor(
+      2,
+      Runtime.getRuntime().availableProcessors(), //CPU的核心数，适合CPU密集型任务
+      3,
+      TimeUnit.SECONDS,
+      new LinkedBlockingDeque<>(3),
+      Executors.defaultThreadFactory(),
+      new ThreadPoolExecutor.DiscardOldestPolicy()
+);
+```
+
+
+
 ### 锁的种类和原理
 
 - 乐观锁与悲观锁
+
 - 独占锁与共享锁
+
 - 公平锁与非公平锁
+
+
+> 公平锁与非公平锁的应用
+
+- 阻塞队列 `ArrayBlockingQueue`
+
+如果为true则插入或删除时阻塞的线程的队列访问按 FIFO 顺序处理； 如果为false ，则未指定访问顺序。
+```java
+    public ArrayBlockingQueue(int capacity, boolean fair) {
+        if (capacity <= 0)
+            throw new IllegalArgumentException();
+        this.items = new Object[capacity];
+        lock = new ReentrantLock(fair);
+        notEmpty = lock.newCondition();
+        notFull =  lock.newCondition();
+    }
+```
+
+- `可重入锁对象` 默认是非公平锁
+```java
+public ReentrantLock() {
+	sync = new NonfairSync();
+}
+```
+
 
 > 什么是可重入锁
 
@@ -255,9 +403,10 @@ public class Singleton {
 
 导致线程上下文的切换和重新调度开销。
 
-### AQS（AbstractQueuedSynchronizer） 队列同步器
+### AQS 队列同步器
 
-抽象同步器，它是全部锁的基础
+AQS（AbstractQueuedSynchronizer）抽象同步器，它是全部锁的基础
+
 所谓锁就是`state`值啊，state大于0就是锁已被持有，记录currentThread。
 获取锁就是cas修改state为1，可重入就继续加1，释放锁-1，为0就释放了锁。
 双向队列保存申请锁的线程，公平锁就看下一个来cas改state的是不是表头。结合lock的lock和unlock看。
@@ -266,10 +415,6 @@ public class Singleton {
 - 实现锁或其他同步器的基础框架
 - 独占模式 EXCLUSIVE：如果一个线程获取到共享资源，修改状态state为1，表示该线程拥有该资源，其他线程尝试获取失败后被阻塞 。例如：`ReentrantLock`
 - 共享模式 SHARED：当多个线程去请求资源时，通过 CAS 方式竞争获取资源。当一个线程获取到了资源后另外一个线程再次去获取时，如果当前资源还能满足它的需要，则当前线程只需要使用 CAS 方式进行获取即可。
-
-1. CountDownLatch：主线程开启多个子线程执行任务，等待所有子线程执行完成。（与join()区别，使用await()和countDown(）方法灵活操作
-2. CyclicBarrier：当所有线程都到达屏障点时才能一块继续向下执行（适用于分步骤执行总任务）
-3. Semaphore：内部计数器递增（M原有值+N新增线程）（release() 信号量+1；acquire(2) 线程一直阻塞，直到信号量达到指定数值）
 
 ### CAS（CompareandSwap）比较和替换
 
@@ -290,8 +435,28 @@ public class Singleton {
 - 原子操作（通过获取字段的内存偏移地址更新数值）：java.util.concurrent.atomic
 - AQS（抽象的队列式的同步器）
 
-
 ### 阻塞队列
+
+| 队列                  | 有界性             | 锁   | 数据结构   |
+| --------------------- | ------------------ | ---- | ---------- |
+| ArrayBlockingQueue    | bounded(有界)      | 加锁 | arrayList  |
+| LinkedBlockingQueue   | optionally-bounded | 加锁 | linkedList |
+| PriorityBlockingQueue | unbounded          | 加锁 | heap       |
+| DelayQueue            | unbounded          | 加锁 | heap       |
+| SynchronousQueue      | bounded            | 加锁 | 无         |
+| LinkedTransferQueue   | unbounded          | 加锁 | heap       |
+| LinkedBlockingDeque   | unbounded          | 无锁 | heap       |
+
+```java
+//初始化ReentrantLock重入锁，出队入队拥有这同一个锁 
+lock = new ReentrantLock(fair);
+//初始化非空等待队列
+notEmpty = lock.newCondition();
+//初始化非满等待队列 
+notFull =  lock.newCondition();
+```
+
+
 
 - 加锁解锁（不满不空的条件对象唤醒signal）
 - 阻塞队列（BlockingQueue）是一个支持两个附加操作的队列。这两个附加的操作是：
@@ -301,6 +466,28 @@ public class Singleton {
 当队列满时，存储元素的线程会等待队列可用。
 
 - 阻塞队列常用于生产者和消费者的场景，生产者是往队列里添加元素的线程，消费者是从队列里拿元素的线程。阻塞队列就是生产者存放元素的容器，而消费者也只从容器里拿元素
+
+
+
+- 阻塞方法：
+
+	- put(E e) 放元素
+
+	- `take()` 拿元素
+
+	- offer(E e,long timeout, TimeUnit unit) 放元素
+
+	- `poll(long timeout, TimeUnit unit)` 拿元素
+
+- 非阻塞方法
+
+	- `offer(E e)`：放元素，将元素e插入到队列末尾，如果插入成功，则返回true；如果插入失败（即队列已满），则返回false；
+
+	- `poll()`：拿元素，移除并获取队首元素，若成功，则返回队首元素；否则返回null；
+
+	- peek()：拿元素，获取队首元素，若成功，则返回队首元素；否则返回null
+
+
 
 ```java
  public boolean offer(E e) {
@@ -355,23 +542,88 @@ public class Singleton {
 
 ​    ![0](https://i.loli.net/2021/10/11/pZAs9zn5FVldKG4.jpg)
 
-### 锁有哪些 以及 它们的原理
 
-### 线程安全的理解
+
+#### wait()/await()/sleep/yield比较
+
+|                      | wait                                  | await                                 | sleep            | yield          |
+| -------------------- | ------------------------------------- | ------------------------------------- | ---------------- | -------------- |
+| **是否释放持有的锁** | 释放                                  | 释放                                  | 阻塞线程，不释放 | 释放           |
+| **调用后何时恢复**   | 唤醒后进入就绪态 notify()/notifyAll() | 唤醒后进入就绪态 signal()/signalAll() | 指定时间后       | 立刻进入就绪态 |
+| **谁的方法**         | Object                                | AQS内部类 ConditionObject             | Thread           | Thread         |
+| **执行环境**         | synchronized块                        | lock块                                | 任意位置         | 任意位置       |
+
+wait()挂起期间，线程会**释放锁**。假若线程没有释放锁，那么其他线程就无法进入对象的同步方法或同步控制块中，也就无法执行notify() 和 notifyAll()方法来唤醒挂起的线程，从而造成死锁。
+
+> notify() 与 signal() 的区别
+
+notify使用来唤醒使用wait的线程；而signal是用来唤醒await线程
+
+> wait() 和 sleep() 的区别
+
+wait()：当前线程阻塞挂起线程并释放监视器锁；通过notify()/notifyAll()/中断/达到指定时间被唤醒；被中断会抛出InterruptedException；使用在同步代码块中，是Object超类的方法。
+
+sleep()：当前线程让出指定时间的执行权，不参与CPU调度，不会释放锁；休眠时间一到会被唤醒；被中断会抛出InterruptedException；使用在任何地方，是Thread类的方法。
+
+> sleep() 与 yield() 的区别
+
+线程调用 sleep 方法时，调用线程会被阻塞挂起指定的时间，在这期间线程调度器不会去调度该线程 。 
+
+线程调用 yield 方法时，线程只是让出自己剩余的时间片，并没有被阻塞挂起，而是处于就绪状态，线程调度器下一次调度时就有可能调度到当前线程执行 。
+
+#### 条件变量ConditionObject
+
+> 条件变量ConditionObject类
+
+公平或者不公平的可重入锁 ：lock = new ReentrantLock(fair);
+
+不空条件对象：notEmpty = lock.newCondition();
+
+不满条件对象：notFull = lock.newCondition();
+
+> 为什么需要使用condition呢？
+
+简单一句话，lock更灵活。以前的方式只能有一个等待队列，在实际应用时可能需要多个，比如读和写。为了这个灵活性，lock将 `同步互斥控制` 和 `等待队列`分离开来，互斥保证在某个时刻只有一个线程访问临界区（lock自己完成），等待队列负责保存被阻塞的线程（condition完成）。
+
+> synchronized 同时只能与一个共享变量的 notify 或 wait 方法实现同步 ，而 AQS 的一个锁可以对应多个条件变量。
+
+在每个条件变量 内部都维护了 一个条件队列，用来存放调用条件变量的 await()方法时被阻塞的线程 。注意这个条件队列和 AQS 队列不是一 回事。
+
+
+
+#### 线程间同步/通信
+
+1. CountDownLatch：主线程开启多个子线程执行任务，等待所有子线程执行完成。（与join()区别，使用await()和countDown(）方法灵活操作）
+2. 回环屏障 CyclicBarrier：当所有线程都到达屏障点时才能一块继续向下执行（适用于分步骤执行总任务）
+3. 信号量 Semaphore：内部计数器递增  acqurire(M原有值+N新增线程)（release() 信号量+1；acquire(2) 线程一直阻塞，直到信号量达到指定数值）
+
+
+// 如果构造 Semaphore 对象时，传递的参数为 N，并在 M 个线程中调用了该信号量的 release 方法，那么在调用 acquire 使 M 个线程同步时，传递的参数应该是 M+N。
+
+
+```java
+private static Semaphore semaphore = new Semaphore(0) ;// 创建一个Semaphore 实例
+semaphore.release(); // 让信号量递增+1
+semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一直阻塞，直到信号量的计数变为 2 才会返回 。
+```
+
+
 
 ### 未提问内容
 
 - 线程同步
-- 线程间通信
+
 - 线程死锁
 - 线程控制：挂起/停止/恢复
-- 线程间同步：Countdownlatch（join）、回环屏障CyclicBarries、信号量Semaphore（递增） 
+- 未提问内容
 
-##  未提问内容
+## 2.2 输入/输出
+
+  
 
 # 3. JVM
 
-## Java内存模型（类比于硬件缓存模型）
+## 3.1 Java内存模型
 
 - Java内存模型的主要目标是定义程序中各个变量的访问规则
 - 工作内存（从主内存拷贝）、主内存（从工作内存同步）：一个变量如何从主内存拷贝到工作内存、如何从工作内存同步到主内存之间
@@ -379,49 +631,266 @@ public class Singleton {
 - 乱序执行
 - 执行重排序
 
+### 原子性、可见性与有序性
+
+> 原子性(Atomicity)
+
+- 内存模型保证原子性变量的操作：lock [ `主内存-》工作内存`：read、load、assign、use] [ `工作内存-》主内存`：store、write] unlock
+
+- Synchronize 同步块保证原子性变量操作：通过节码指令 [ `同步块`: monitorenter 和 monitorexit] [ `方法`：ACC_SYNCHRONIZED ]完成隐式操作。
+
+> 可见性(Visibility)
+
+是指当一个线程修改了共享变量的值，其他线程也能够立即得知这个通知。主要操作细节就是修改值后将值同步至主内存(volatile 值使用前都会从主内存刷新)，除了 **volatile 还有 synchronize 和 final 可以保证可见性**。同步块的可见性是由“对一个变量执行 unlock 操作之前，必须先把此变量同步会主内存中( store、write 操作)”这条规则获得。而 final 可见性是指：被 final 修饰的字段在构造器中一旦完成，并且构造器没有把 “this” 的引用传递出去( this 引用逃逸是一件很危险的事情，其他线程有可能通过这个引用访问到“初始化了一半”的对象)，那在其他线程中就能看见 final 字段的值。
+
+> 有序性(Ordering)
+
+`Java 语言通过 volatile 和 synchronize 两个关键字来保证线程之间操作的有序性`。volatile 自身就禁止指令重排，而 synchronize 则持有同一个锁的两个同步块只能串行的进入。
+
 ## Java内存结构
 
-- 堆Heap/元空间/栈（Java栈/本地栈/程序计数器）
-- GC的过程（OOM)
+### 堆Heap/元空间MetaSpace/栈Stack（Java栈/本地栈/程序计数器）
+
+​    ![0](https://i.loli.net/2021/10/13/iVO9sYSQHp2u4J1.png)
+
+ `从线程共享的角度来看，堆和元空间是所有线程共享的，而虚拟机栈、本地方法栈、程序计数器是线程内部私有的`
+
+​    ![0](https://i.loli.net/2021/10/13/FVEGpR6eK3iZBrC.png)
+
+1） 如果线程请求的栈深度大于虚拟机所允许的最大深度， 将抛出 `StackOverflowError`异常。
+
+2） 如果虚拟机的栈内存允许动态扩展， 当扩展栈容量无法申请到足够的内存时， 将抛出
+
+`OutOfMemoryError` 异常。
+
+
+
+### GC的过程（OOM)
+
+> Minor GC和Major GC/Full GC
+
+- `Minor GC` 是新生代GC，指的是发生在新生代的垃圾收集动作。由于java对象大都是朝生夕死的，所以Minor GC非常频繁，一般回收速度也比较快。
+
+- `Major GC/Full GC` 是老年代GC，指的是发生在老年代的GC，发生Major GC一般经常会伴有Minor GC，Major GC的速度比Minor GC慢的多。 
+
+- `Major GC`：清理永久代，但是由于很多MajorGC 是由MinorGC 触发的，所以有时候很难将Major GC 和Minor GC区分开。
+
+- `FullGC`：是清理整个堆空间—包括年轻代和永久代。FullGC 一般消耗的时间比较长，远远大于Minor GC，因此，我们必须降低Full GC发生的频率。
+
+
+
+
 
 ​    ![0](https://i.loli.net/2021/10/11/TlXW5Fu4CcD6eOk.jpg)
 
-晋升失败如何处理？？
+
+
+`java.lang.OutOfMemoryError：Java heap space`: 如果 Survivor 区无法放下，或者超大对象的阈值超过上限，则尝试在老年代中进行分配 ； 如果老年代也无法放下，则会触发 Full Garbage Collection ， 即 `FGC`。如果依然无法放下， 则抛出 `OOM`。
+
+出错时的堆内信息对解决问题非常有帮助 ， 所以给 JVM 设置运行参数 `－XX:+HeapDumpOnOutOfMemoryError`，让JVM遇到 OOM 异常时能输出堆内信息，特别是对相隔数月才出现的 OOM 异常尤为重要。
+
+`StackOverflowError`:表示请求的栈溢出 ， 导致内存耗尽 ， 通常出现在**递归方法中**。
+
+
+
+> 触发Major GC/Full GC
+
+- 老年代空间不足
+
+   如果创建一个大对象，Eden区域当中放不下这个大对象，会直接保存在老年代当中，如果老年代空间也不足，就会触发Full GC。为了避免这种情况，最好就是不要创建太大的对象。
+
+- 持久代空间不足
+
+   如果有持久代空间的话，系统当中需要加载的类，调用的方法很多，同时持久代当中没有足够的空间，就出触发一次Full GC
+
+- YGC出现promotion failure（晋升失败）
+
+  promotion failure发生在Young GC, 如果Survivor区当中存活对象的年龄达到了设定值，会就将Survivor区当中的对象拷贝到老年代，如果老年代的空间不足，就会发生promotion failure，接下去就会发生Full GC.
+
+   在发生YGC是会判断，是否安全，这里的安全指的是，当前老年代空间可以容纳YGC晋升的对象的平均大小，如果不安全，就不会执行YGC,转而执行Full GC。
+
+- 显示调用System.gc().可以设置DisableExplicitGC来禁止调用System.gc引发Full GC
+
+
+
+> 什么时候新生代的存活对象会到老年代中?
+
+上面的复制算法虽然好,但是总会产生存活对象满了的情况,这个时候大对象想要放入新生代放不下区,该怎么办?
+
+第一种的情况就是将躲过 `15次MinorGC的对象 `移动到老年代.
+
+第二种就是 `动态年龄对象判断`，既Survivor区的经历过两次GC的对象大小大于Survivor区容量的一半的时候,如Survivor区是100m,里面的对象之和大于50m.就将这些2次GC还存活的对象移入到老年代中去.
+
+第三种就是 `大对象` ,还没有进入到新生代的时候就被移动到老年代,这里有个参数,为-XX:PretenureSizeThreshold,可以设置值,比如1m,那么再进入堆内存的时候,就会检查这个实例对象的大小,如果大于这个阈值,就直接进入到老年代。
+
+> Minor GC后存活的对象晋升到老年代时发生Promotion failure，有两种情况会触发Full GC
+
+- 之前每次晋升的对象的平均大小 > 老年代剩余空间
+- Minor GC后存活的对象超过了老年代剩余空间
+
+这两种情况都是因为老年代会为新生代对象的晋升提供担保，而每次晋升的对象的大小是无法预测的，所以只能基于统计，一个是基于历史平均水平，一个是基于下一次可能要晋升的最大水平。
+
+
 
 ## JVM调优
 
 > 简化步骤说明
 
-- 首先查看系统CPU负载情况，再看jdk进程号，可以直接导出hprof文件
+- 首先查看系统CPU负载情况： `uptime`  `top`，再看jdk进程号 `jps -l`，直接导出hprof文件，再通过 `eclipse MAT`工具分析
 
-- 其次查看大对象情况以及查看GC情况
+- 其次查看大对象情况 `jmap -histo` 以及 查看GC情况 `jstat -gc`
 
 > 详细步骤说明
 
 - 内存异常的时候，自动dump文件，参数配置：JAVA_OPTS="-XX:HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=\\\"，
-
 - 查看系统CPU负载情况： `uptime`；实时查看系统各个进程占用CPU的情况： `top`
 - 通过jps获取虚拟机进程号：` jps -l`
 - 导出内存使用情况到文件： `jmap -dump:format=b,file=D:\dump\dumpName.hprof [pid]`
-- 运行时观察gc情况： `jstat -gc [pid] 间隔秒 循环次数`
 - 查看大对象情况： `jmap -histo [pid] |sort -k 2 -g -r | less`
+- 运行时观察gc情况： `jstat -gc [pid] 间隔秒 循环次数`
 - 分析Dump文件：通过jdk自身的 `visualVm` 或者 `eclipse MAT` 工具分析（疑点-查看线程栈，retainedHeap最大等等）
 
 ​    ![0](https://i.loli.net/2021/10/11/uY1BDpzOPSMjWUH.png)
 
+
+
+> JVM的参数设置：
+
+​    -Xms1G -Xmx2G -Xmn500M -XX:MaxPermSize=64M -XX:+UseConcMarkSweepGC -XX:SurvivorRatio=3
+
+​    Xms 最小内存
+
+​    Xmx 最大内存
+
+​    Xmn 新生代内存
+
+​    Xss 栈大小。线程创建后，分配给每一个线程的大小。
+
+​    -XX:NewRatio=n 设置年轻代与年老代的比值。 如：3 ；年老代:年轻代=3 ,年轻代=1/4；
+
+​    -XX:SurvivorRatio=n 设置年轻代中Eden区与两个Survivor区的比值。如：3 ；Eden:Survivor=3:2,则一个Survivor占了1/5
+
+​    -XX:MaxPermSize = n 设置持久代大小
+
+> 垃圾回收统计信息：
+
+​    -XX:+PrintGC 
+
+​    -XX:+PrintGCDetails
+
+​    -XX:+PrintGCTimesStamps
+
+​    -Xloggc:filename
+
+​    -XX :PreBlockSpinsh=10 多线程获取锁的方式自旋锁，在不释放CPU资源的情况下，设置最大的尝试次数
+
+​    -XX:MaxTenuringThreshold：对象晋升老年代的年龄阈值(在年轻代存活时间)
+
 ## 类加载机制
 
+### 双亲委派模型
 
+
+
+​    ![0](https://i.loli.net/2021/10/13/FRIV89xUMLciDtd.png)
+
+两个关键问题：`是否加载过` 与 `是否可以加载`
+
+> 类加载器种类
+
+**1) 启动类加载器(Bootstrap ClassLoader)：**
+
+负责加载存放在 `$JAVA_HOME\jre\lib`下，或被-Xbootclasspath参数指定的路径中的，并且能被虚拟机识别的类库（如rt.jar，所有的 `java.*`开头的类均被Bootstrap ClassLoader加载）。启动类加载器是无法被Java程序直接引用的。
+
+**2) 扩展类加载器(ExtensionClassLoader):**
+
+Java语言编写的，该加载器由 `sun.misc.Launcher$ExtClassLoader` 实现，它负责加载 `$JAVA_HOME\jre\lib\ext`目录中，或者由 `java.ext.dirs`系统变量指定的路径中的所有类库（如javax.*开头的类），开发者可以直接使用扩展类加载器。
+
+**3) 应用程序类加载器(Application ClassLoader)**
+
+Java语言编写，该类加载器由 `sun.misc.Launcher$AppClassLoader` 来实现，它负责加载用户类路径 `ClassPath`所指定的类，开发者可以直接使用该类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。
+
+**4) 用户自定义类加载器(CustomClassLoader)**
+
+Java语言编写的，用户自定义类加载器，可以加载指定路径的class文件
+
+自定义类加载器的核心在于对字节码文件的获取，如果是加密的字节码则需要在该类中对文件进行解密。
+
+> 双亲委派模型的好处
+
+**1）保证了JVM提供的核心类不被篡改，保证class执行安全**
+
+比如上文的string类，无论哪个加载器要加载这个类的话，由于双亲委派机制，最终都会交由最顶层的启动类加载器来加载，这样保证了string类在各种类加载器环境中，都是同一个类。试想下，没有双亲委派机制的话，各个加载器自己加载string类，有可能不同类加载器加载的string方法不一样，那样的话，我们的程序是不是就会一片混乱了。
+
+**2）防止重复加载同一个class**
+
+从双亲委派机制流程图中，我们可以看出，委托向上问一问，如果加载过，就不用再加载了。
+
+#### 类的生命周期
+
+![image-20211013222546976](https://i.loli.net/2021/10/13/4cloHIUaPkwgf8p.png)
+
+其中类加载的过程包括了 `加载、验证、准备、解析、初始化` 五个阶段。在这五个阶段中，加载、验证、准备和初始化这四个阶段发生的顺序是确定的，而解析阶段则不一定，它在某些情况下可以在初始化阶段之后开始，这是为了支持Java语言的运行时绑定（也成为动态绑定或晚期绑定）。另外注意这里的几个阶段是按顺序开始，而不是按顺序进行或完成，因为这些阶段通常都是互相交叉地混合进行的，通常在一个阶段执行的过程中调用或激活另一个阶段
 
 ## 垃圾回收算法
 
-- 新生代：复制
+> 对象存活判定
 
-- 老年代：标记清理/标记压缩
+- 引用计数：引用为0时可以回收。
+- 可达性分析：一个对象到GC Roots没有任何引用链时，证明对象不可达，不可用。
 
+`GC Roots`包括：虚拟机栈中引用对象、本地方法栈中JNI引用对象、方法区中类静态属性实体引用对象、常量引用对象。
 
+> 垃圾回收算法
+
+- 复制算法：`新生代`
+- 标记-清理算法：`老年代`
+- 标记-压缩算法：`老年代`
+
+> 安全点
+
+`安全点`是以“是否具有 `让程序长时间执行`的特征”为原则进行选定的，所以 `方法调用、 循环跳转、 异常跳转`这些位置都可能会被设置成安全点。为避免设置的安全点过多，对于 `循环次数较少`(int类型或者更小数据范围的类型) 的不会被放置在安全点，`可数循环`；对于 `循环次数较大`（long或者更大数据范围的类型）会被放置在安全点，`不可数循环`
 
 ## 垃圾收集器
+
+#### CMS收集器（UseConcMarkSweepGC）并发标记清理收集器
+
+CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时间为目标的收集器`。目前很大一部分的Java应用都集中在互联网站或B/S系统的服务端上，这类应用尤其重视服务的响应速度，希望系统停顿时间最短，以给用户带来较好的体验。
+
+从名字（包含“Mark Sweep”）上就可以看出CMS收集器是基于“标记-清除”算法实现的，它的运行过程包括以下四个步骤： 
+
+- 1. 初始标记（CMS initial mark）
+  2. 并发标记（CMS concurrent mark）
+  3. 重新标记（CMS remark）
+  4. 并发清除（CMS concurrent sweep）
+
+`第 a、b步的初始标记和重新标记阶段依然会引发 STW ，而第c、d 步的并发标记和并发清除两个阶段可以和应用程序并发执行，也是比较耗时的操作，但并不影响应用程序的正常执行。`
+
+**具体过程：**初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC Roots Tracing的过程，而重新标记阶段则是为了修正并发标记期间，因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。由于整个过程中耗时最长的并发标记和并发清除过程中，收集器线程都可以与用户线程一起工作，所以总体上来说，CMS收集器的内存回收过程是与用户线程一起并发地执行。
+
+> 优缺点
+
+`优点`：并发收集**、**低停顿
+
+`缺点`：产生大量空间碎片、并发阶段会降低吞吐量
+
+> 参数控制：
+
+**-XX:+UseConcMarkSweepGC** 使用CMS收集器
+
+**-XX:+UseCMSCompactAtFullCollection** Full GC后，进行一次碎片整理；整理过程是独占的，会引起停顿时间变长
+
+**-XX:+CMSFullGCsBeforeCompaction** 设置进行几次Full GC后，进行一次碎片整理
+
+-**XX:ParallelCMSThreads** 设定CMS的线程数量（一般情况约等于可用CPU数量）
+
+> 由于 CMS 采用的是 “标记-清除算法” ，因此产生大量的空间碎片。
+
+为了解决这个问题， CMS 可以通过配置**-XX:+UseCMSCompactAtFullCollection** 参数，强制 JVM 在 FGC 完成后对老年代进行压缩 ， 执行一次空间碎片整理 ，但是空间碎片整理阶段也会引发  `STW`。为了减少 STW 次数， CMS 还可以通过配置**-XX :+CMSFullGCsBeforeCompaction=n** 参数， `在执行了 n 次 FGC 后， JVM 再在老年代执行空间碎片整理。`
+
+​    ![0](https://i.loli.net/2021/10/13/ODBeyGEQIZrWujx.png)
+
+​    
 
 
 

@@ -58,10 +58,10 @@ docsify init ./docs
 
 ## 2.4 本地预览网站
 
-通过运行 `docsify serve` 启动一个本地服务器，可以方便地实时预览效果。默认访问地址 [http://localhost:3000](http://localhost:3000/) 。
+通过运行 `docsify serve` 启动一个本地服务器，可以方便地实时预览效果。默认访问地址 [http://localhost:3000](http://localhost:3000/) 。端口默认为3000
 
 ```bash
-docsify serve docs
+docsify serve docs --port 3001
 ```
 
 ![image-20210925134631671](https://i.loli.net/2021/09/25/2DGyFKeSintWqjE.png)
