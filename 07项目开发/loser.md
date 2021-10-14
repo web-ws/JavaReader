@@ -2,7 +2,11 @@
 
 # 1. Java基础
 
-## 集合
+## 1.1 基本数据类型
+
+## 1.2 类/抽象类/接口
+
+## 1.3 集合
 
 ### ArrayList原理和扩容机制
 
@@ -127,7 +131,7 @@
 
 2. 树的根始终是黑色的 (黑土地孕育黑树根， )
 
-3. `没有两个相邻的红色节点`（红色节点不能有红色父节点或红色子节点，**并没有说不能出现连续的黑色节点**）
+3. `没有两个相邻的红色节点`（红色节点不能有红色父节点或红色子节点，`并没有说不能出现连续的黑色节点`）
 
 4. 从节点（包括根）到其任何后代NULL节点(叶子结点下方挂的两个空节点，并且认为他们是黑色的)的每条路径都具有相同数量的黑色节点
 
@@ -174,6 +178,8 @@
 
       - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
 
+### LinkedList（待补充）
+
 
 
 ## String 类型
@@ -188,12 +194,21 @@
 
 ## 未提问内容
 
-### 单例
+### 单例写法
+
+[参考饿汉和懒汉模式](/04架构设计/设计模式)
+
+编写原则：`私有构造方法+向外提供创建实例的方法`
+
+> 懒汉模式单例：双检查锁机制（线程安全）
 
 ```java
 public class Singleton {
 
     private volatile static Singleton instance;
+    
+    private Singleton() {}
+    
     public static Singleton getInstance() {
         if (instance == null) {
             synchronized (Singleton.class) {
@@ -209,6 +224,22 @@ public class Singleton {
     }
 }
 ```
+
+> 饿汉单例（线程安全）
+
+```java
+public class HungrySingleton {    
+    private static final HungrySingleton instance = new HungrySingleton();    
+    
+    private HungrySingleton() {}    
+    
+    public static HungrySingleton getInstance() {        
+    	return instance;
+    }
+}
+```
+
+
 
 # 2. Java高级
 
@@ -548,12 +579,12 @@ notFull =  lock.newCondition();
 
 |                      | wait                                  | await                                 | sleep            | yield          |
 | -------------------- | ------------------------------------- | ------------------------------------- | ---------------- | -------------- |
-| **是否释放持有的锁** | 释放                                  | 释放                                  | 阻塞线程，不释放 | 释放           |
-| **调用后何时恢复**   | 唤醒后进入就绪态 notify()/notifyAll() | 唤醒后进入就绪态 signal()/signalAll() | 指定时间后       | 立刻进入就绪态 |
-| **谁的方法**         | Object                                | AQS内部类 ConditionObject             | Thread           | Thread         |
-| **执行环境**         | synchronized块                        | lock块                                | 任意位置         | 任意位置       |
+| `是否释放持有的锁` | 释放                                  | 释放                                  | 阻塞线程，不释放 | 释放           |
+| `调用后何时恢复`   | 唤醒后进入就绪态 notify()/notifyAll() | 唤醒后进入就绪态 signal()/signalAll() | 指定时间后       | 立刻进入就绪态 |
+| `谁的方法`         | Object                                | AQS内部类 ConditionObject             | Thread           | Thread         |
+| `执行环境`         | synchronized块                        | lock块                                | 任意位置         | 任意位置       |
 
-wait()挂起期间，线程会**释放锁**。假若线程没有释放锁，那么其他线程就无法进入对象的同步方法或同步控制块中，也就无法执行notify() 和 notifyAll()方法来唤醒挂起的线程，从而造成死锁。
+wait()挂起期间，线程会`释放锁`。假若线程没有释放锁，那么其他线程就无法进入对象的同步方法或同步控制块中，也就无法执行notify() 和 notifyAll()方法来唤醒挂起的线程，从而造成死锁。
 
 > notify() 与 signal() 的区别
 
@@ -621,9 +652,9 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
   
 
-# 3. JVM
+## 2.3 JVM
 
-## 3.1 Java内存模型
+### 2.3.1 Java内存模型
 
 - Java内存模型的主要目标是定义程序中各个变量的访问规则
 - 工作内存（从主内存拷贝）、主内存（从工作内存同步）：一个变量如何从主内存拷贝到工作内存、如何从工作内存同步到主内存之间
@@ -631,7 +662,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 - 乱序执行
 - 执行重排序
 
-### 原子性、可见性与有序性
+#### 原子性、可见性与有序性
 
 > 原子性(Atomicity)
 
@@ -641,15 +672,15 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 > 可见性(Visibility)
 
-是指当一个线程修改了共享变量的值，其他线程也能够立即得知这个通知。主要操作细节就是修改值后将值同步至主内存(volatile 值使用前都会从主内存刷新)，除了 **volatile 还有 synchronize 和 final 可以保证可见性**。同步块的可见性是由“对一个变量执行 unlock 操作之前，必须先把此变量同步会主内存中( store、write 操作)”这条规则获得。而 final 可见性是指：被 final 修饰的字段在构造器中一旦完成，并且构造器没有把 “this” 的引用传递出去( this 引用逃逸是一件很危险的事情，其他线程有可能通过这个引用访问到“初始化了一半”的对象)，那在其他线程中就能看见 final 字段的值。
+是指当一个线程修改了共享变量的值，其他线程也能够立即得知这个通知。主要操作细节就是修改值后将值同步至主内存(volatile 值使用前都会从主内存刷新)，除了 `volatile 还有 synchronize 和 final 可以保证可见性`。同步块的可见性是由“对一个变量执行 unlock 操作之前，必须先把此变量同步会主内存中( store、write 操作)”这条规则获得。而 final 可见性是指：被 final 修饰的字段在构造器中一旦完成，并且构造器没有把 “this” 的引用传递出去( this 引用逃逸是一件很危险的事情，其他线程有可能通过这个引用访问到“初始化了一半”的对象)，那在其他线程中就能看见 final 字段的值。
 
 > 有序性(Ordering)
 
 `Java 语言通过 volatile 和 synchronize 两个关键字来保证线程之间操作的有序性`。volatile 自身就禁止指令重排，而 synchronize 则持有同一个锁的两个同步块只能串行的进入。
 
-## Java内存结构
+### 2.3.2 Java内存结构
 
-### 堆Heap/元空间MetaSpace/栈Stack（Java栈/本地栈/程序计数器）
+#### 堆Heap/元空间MetaSpace/栈Stack（Java栈/本地栈/程序计数器）
 
 ​    ![0](https://i.loli.net/2021/10/13/iVO9sYSQHp2u4J1.png)
 
@@ -665,7 +696,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 
 
-### GC的过程（OOM)
+#### GC的过程（OOM)
 
 > Minor GC和Major GC/Full GC
 
@@ -689,7 +720,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 出错时的堆内信息对解决问题非常有帮助 ， 所以给 JVM 设置运行参数 `－XX:+HeapDumpOnOutOfMemoryError`，让JVM遇到 OOM 异常时能输出堆内信息，特别是对相隔数月才出现的 OOM 异常尤为重要。
 
-`StackOverflowError`:表示请求的栈溢出 ， 导致内存耗尽 ， 通常出现在**递归方法中**。
+`StackOverflowError`:表示请求的栈溢出 ， 导致内存耗尽 ， 通常出现在`递归方法中`。
 
 
 
@@ -732,7 +763,9 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 
 
-## JVM调优
+### 2.3.3 JVM调优
+
+#### 调优步骤
 
 > 简化步骤说明
 
@@ -752,7 +785,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 ​    ![0](https://i.loli.net/2021/10/11/uY1BDpzOPSMjWUH.png)
 
-
+#### JVM参数设置
 
 > JVM的参数设置：
 
@@ -786,9 +819,9 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 ​    -XX:MaxTenuringThreshold：对象晋升老年代的年龄阈值(在年轻代存活时间)
 
-## 类加载机制
+### 2.3.4 类加载机制
 
-### 双亲委派模型
+#### 双亲委派模型
 
 
 
@@ -798,19 +831,19 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 > 类加载器种类
 
-**1) 启动类加载器(Bootstrap ClassLoader)：**
+`1) 启动类加载器(Bootstrap ClassLoader)：`
 
 负责加载存放在 `$JAVA_HOME\jre\lib`下，或被-Xbootclasspath参数指定的路径中的，并且能被虚拟机识别的类库（如rt.jar，所有的 `java.*`开头的类均被Bootstrap ClassLoader加载）。启动类加载器是无法被Java程序直接引用的。
 
-**2) 扩展类加载器(ExtensionClassLoader):**
+`2) 扩展类加载器(ExtensionClassLoader):`
 
 Java语言编写的，该加载器由 `sun.misc.Launcher$ExtClassLoader` 实现，它负责加载 `$JAVA_HOME\jre\lib\ext`目录中，或者由 `java.ext.dirs`系统变量指定的路径中的所有类库（如javax.*开头的类），开发者可以直接使用扩展类加载器。
 
-**3) 应用程序类加载器(Application ClassLoader)**
+`3) 应用程序类加载器(Application ClassLoader)`
 
 Java语言编写，该类加载器由 `sun.misc.Launcher$AppClassLoader` 来实现，它负责加载用户类路径 `ClassPath`所指定的类，开发者可以直接使用该类加载器，如果应用程序中没有自定义过自己的类加载器，一般情况下这个就是程序中默认的类加载器。
 
-**4) 用户自定义类加载器(CustomClassLoader)**
+`4) 用户自定义类加载器(CustomClassLoader)`
 
 Java语言编写的，用户自定义类加载器，可以加载指定路径的class文件
 
@@ -818,11 +851,11 @@ Java语言编写的，用户自定义类加载器，可以加载指定路径的c
 
 > 双亲委派模型的好处
 
-**1）保证了JVM提供的核心类不被篡改，保证class执行安全**
+`1）保证了JVM提供的核心类不被篡改，保证class执行安全`
 
 比如上文的string类，无论哪个加载器要加载这个类的话，由于双亲委派机制，最终都会交由最顶层的启动类加载器来加载，这样保证了string类在各种类加载器环境中，都是同一个类。试想下，没有双亲委派机制的话，各个加载器自己加载string类，有可能不同类加载器加载的string方法不一样，那样的话，我们的程序是不是就会一片混乱了。
 
-**2）防止重复加载同一个class**
+`2）防止重复加载同一个class`
 
 从双亲委派机制流程图中，我们可以看出，委托向上问一问，如果加载过，就不用再加载了。
 
@@ -832,7 +865,7 @@ Java语言编写的，用户自定义类加载器，可以加载指定路径的c
 
 其中类加载的过程包括了 `加载、验证、准备、解析、初始化` 五个阶段。在这五个阶段中，加载、验证、准备和初始化这四个阶段发生的顺序是确定的，而解析阶段则不一定，它在某些情况下可以在初始化阶段之后开始，这是为了支持Java语言的运行时绑定（也成为动态绑定或晚期绑定）。另外注意这里的几个阶段是按顺序开始，而不是按顺序进行或完成，因为这些阶段通常都是互相交叉地混合进行的，通常在一个阶段执行的过程中调用或激活另一个阶段
 
-## 垃圾回收算法
+### 2.3.5 垃圾回收算法
 
 > 对象存活判定
 
@@ -851,7 +884,7 @@ Java语言编写的，用户自定义类加载器，可以加载指定路径的c
 
 `安全点`是以“是否具有 `让程序长时间执行`的特征”为原则进行选定的，所以 `方法调用、 循环跳转、 异常跳转`这些位置都可能会被设置成安全点。为避免设置的安全点过多，对于 `循环次数较少`(int类型或者更小数据范围的类型) 的不会被放置在安全点，`可数循环`；对于 `循环次数较大`（long或者更大数据范围的类型）会被放置在安全点，`不可数循环`
 
-## 垃圾收集器
+### 2.3.6 垃圾收集器
 
 #### CMS收集器（UseConcMarkSweepGC）并发标记清理收集器
 
@@ -866,33 +899,33 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 
 `第 a、b步的初始标记和重新标记阶段依然会引发 STW ，而第c、d 步的并发标记和并发清除两个阶段可以和应用程序并发执行，也是比较耗时的操作，但并不影响应用程序的正常执行。`
 
-**具体过程：**初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC Roots Tracing的过程，而重新标记阶段则是为了修正并发标记期间，因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。由于整个过程中耗时最长的并发标记和并发清除过程中，收集器线程都可以与用户线程一起工作，所以总体上来说，CMS收集器的内存回收过程是与用户线程一起并发地执行。
+`具体过程：`初始标记仅仅只是标记一下GC Roots能直接关联到的对象，速度很快，并发标记阶段就是进行GC Roots Tracing的过程，而重新标记阶段则是为了修正并发标记期间，因用户程序继续运作而导致标记产生变动的那一部分对象的标记记录，这个阶段的停顿时间一般会比初始标记阶段稍长一些，但远比并发标记的时间短。由于整个过程中耗时最长的并发标记和并发清除过程中，收集器线程都可以与用户线程一起工作，所以总体上来说，CMS收集器的内存回收过程是与用户线程一起并发地执行。
 
 > 优缺点
 
-`优点`：并发收集**、**低停顿
+`优点`：并发收集`、`低停顿
 
 `缺点`：产生大量空间碎片、并发阶段会降低吞吐量
 
 > 参数控制：
 
-**-XX:+UseConcMarkSweepGC** 使用CMS收集器
+`-XX:+UseConcMarkSweepGC` 使用CMS收集器
 
-**-XX:+UseCMSCompactAtFullCollection** Full GC后，进行一次碎片整理；整理过程是独占的，会引起停顿时间变长
+`-XX:+UseCMSCompactAtFullCollection` Full GC后，进行一次碎片整理；整理过程是独占的，会引起停顿时间变长
 
-**-XX:+CMSFullGCsBeforeCompaction** 设置进行几次Full GC后，进行一次碎片整理
+`-XX:+CMSFullGCsBeforeCompaction` 设置进行几次Full GC后，进行一次碎片整理
 
--**XX:ParallelCMSThreads** 设定CMS的线程数量（一般情况约等于可用CPU数量）
+-`XX:ParallelCMSThreads` 设定CMS的线程数量（一般情况约等于可用CPU数量）
 
 > 由于 CMS 采用的是 “标记-清除算法” ，因此产生大量的空间碎片。
 
-为了解决这个问题， CMS 可以通过配置**-XX:+UseCMSCompactAtFullCollection** 参数，强制 JVM 在 FGC 完成后对老年代进行压缩 ， 执行一次空间碎片整理 ，但是空间碎片整理阶段也会引发  `STW`。为了减少 STW 次数， CMS 还可以通过配置**-XX :+CMSFullGCsBeforeCompaction=n** 参数， `在执行了 n 次 FGC 后， JVM 再在老年代执行空间碎片整理。`
+为了解决这个问题， CMS 可以通过配置`-XX:+UseCMSCompactAtFullCollection` 参数，强制 JVM 在 FGC 完成后对老年代进行压缩 ， 执行一次空间碎片整理 ，但是空间碎片整理阶段也会引发  `STW`。为了减少 STW 次数， CMS 还可以通过配置`-XX :+CMSFullGCsBeforeCompaction=n` 参数， `在执行了 n 次 FGC 后， JVM 再在老年代执行空间碎片整理。`
 
 ​    ![0](https://i.loli.net/2021/10/13/ODBeyGEQIZrWujx.png)
 
-​    
+## 2.4 反射
 
-
+  
 
 ## 未提问内容
 
@@ -902,7 +935,7 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 
 ### SQL优化原理：
 
-索引/分区/分库 -》 大部分数据走索引，少部分数据物理读
+索引/分区/分库/分表 -》 大部分数据走索引，少部分数据物理读
 
 ### SQL基础 左右连接 等
 
@@ -1112,30 +1145,315 @@ redis 突然set很多key，单线程会不会长时间阻塞
 
 ### Spring IOC理解
 
+一般我们创建对象都是new关键的方式，有了Spring了之后，可以使用注解创建Bean对象，@Compoment @Service @Respository @Mapper @Autowired @Resource
+
+`DI(Dependecy Inject,依赖注入)`是实现控制反转的一种设计模式，依赖注入就是将实例变量传入到一个对象中去。
+
+
+
 ### Spring Aop实现原理和应用
 
-- JDK代理 实现接口的目标类生成代理
-- CGLIB代理 生成目标类的子类
+#### 意义和作用
 
-### Spring 循环引用
+作用：在不修改源代码的情况下，可以实现功能的增强。
+
+传统的纵向体系代码复用：
+
+​    ![0](https://i.loli.net/2021/10/14/3pIYRsB6qzGVcPf.png)
+
+横向抽取机制（AOP思想）：
+
+​    ![0](https://i.loli.net/2021/10/14/hWdAuvtnswcjTDJ.png)
+
+AOP 思想： 基于代理思想，对原来目标对象，创建代理对象，`在不修改原对象代码情况下，通过代理对象，调用增强功能的代码，从而对原有业务方法进行增强 ！`
+
+#### 应用场景
+
+场景一： `记录日志`
+
+场景二： `监控方法运行时间 （监控性能）`
+
+场景三： 权限控制
+
+场景四： 缓存优化 （第一次调用查询数据库，将查询结果放入内存对象， 第二次调用， 直接从内存对象返回，不需要查询数据库 ）
+
+场景五：  `事务管理 `（调用方法前开启事务， 调用方法后提交关闭事务 ）
+
+#### 实现原理：JDK动态代理和CGLIB代理
+
+`把公共部分抽离出来封装，对目标类的方法进行增强操作。`
+
+- JDK代理 生成代理类是 `实现接口的目标类`
+
+return Proxy.newProxyInstance(类加载器， 字节码对象， InvocationHandler对象的invoke方法)
+
+```java
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import com.mengma.dao.CustomerDao;
+import com.mengma.dao.CustomerDaoImpl;
+public class MyBeanFactory {
+    public static CustomerDao getBean() {
+        // 准备目标类
+        final CustomerDao customerDao = new CustomerDaoImpl();
+        // 创建切面类实例
+        final MyAspect myAspect = new MyAspect();
+        // 使用代理类，进行增强
+        return (CustomerDao) Proxy.newProxyInstance(
+            MyBeanFactory.class.getClassLoader(), 
+            new Class[] {CustomerDao.class}, 
+            new InvocationHandler() {
+                public Object invoke(Object proxy, Method method, 
+                                     Object[] args) throws Throwable {
+                    myAspect.myBefore(); // 前增强
+                    Object obj = method.invoke(customerDao, args);
+                    myAspect.myAfter(); // 后增强
+                    return obj;
+            }
+        });
+    }
+}
+```
+
+
+
+![image-20211014093659713](https://i.loli.net/2021/10/14/IjEtXD7oOpP8kAV.png)
+
+
+
+MapperProxy代理
+
+```java
+protected T newInstance(MapperProxy<T> mapperProxy) {
+    // 利用JDK的动态代理生成mapper的代理实例
+    return (T) Proxy.newProxyInstance(mapperInterface.getClassLoader(), 
+                                      new Class[] { mapperInterface }, mapperProxy);
+}
+```
+
+
+
+- CGLIB代理 生成代理类是 `目标类的子类`
+
+`CGLIB（Code Generation Library）`是一个高性能开源的 `代码生成包`，它被许多 AOP 框架所使用，其底层是通过使用一个小而快的`字节码处理框架 ASM`（Java字节码操控框架）转换字节码并生成新的类
+
+`CGLIB 的核心类 Enhancer`
+
+`intercept()` 方法相当于 JDK 动态代理方式中的 `invoke()` 方法，该方法会在目标方法执行的前后，对切面类中的方法进行增强；
+
+```java
+import java.lang.reflect.Method;
+import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.MethodInterceptor;
+import org.springframework.cglib.proxy.MethodProxy;
+import com.mengma.dao.GoodsDao;
+import com.mengma.jdk.MyAspect;
+public class MyBeanFactory {
+    public static GoodsDao getBean() {
+        // 准备目标类
+        final GoodsDao goodsDao = new GoodsDao();
+        // 创建切面类实例
+        final MyAspect myAspect = new MyAspect();
+        // 生成代理类，CGLIB在运行时，生成指定对象的子类，增强
+        Enhancer enhancer = new Enhancer();
+        // 设置增强的类
+        enhancer.setSuperclass(goodsDao.getClass());
+        // 设置回调函数
+        enhancer.setCallback(new MethodInterceptor() {
+            // intercept 相当于 jdk invoke，前三个参数与 jdk invoke—致
+            @Override
+            public Object intercept(Object proxy, Method method, Object[] args, 
+                                    MethodProxy methodProxy) throws Throwable {
+                myAspect.myBefore(); // 前增强
+                Object obj = method.invoke(goodsDao, args); // 目标方法执行
+                myAspect.myAfter(); // 后增强
+                return obj;
+            }
+        });
+        // 创建代理类
+        GoodsDao goodsDaoProxy = (GoodsDao) enhancer.create();
+        return goodsDaoProxy;
+    }
+}
+```
+
+#### AspectJ基于注解开发
+
+| 名称            | 说明                                                         |
+| --------------- | ------------------------------------------------------------ |
+| @Aspect         | 用于定义一个切面。                                           |
+| @Before         | 用于定义前置通知，相当于 BeforeAdvice。                      |
+| @After          | 用于定义后置通知，不管是否异常，该通知都会执行。             |
+| @Around         | 用于定义环绕通知，相当于MethodInterceptor。                  |
+| @AfterThrowing  | 用于定义异常通知，相当于ThrowAdvice。（抛异常执行）          |
+| @AfterReturning | 用于定义返回通知，相当于 AfterReturningAdvice。（无异常返回） |
+
+> 正常情况
+
+​    ![0](https://i.loli.net/2021/10/14/pbrgshMKOm7C6vN.png)
+
+> 异常情况
+
+ ![0](https://i.loli.net/2021/10/14/VFeikm9qLQoPUJy.png)
+
+解释：执行到核心业务方法或者类时，会先执行AOP。在aop的逻辑内，先走 `@Around` 注解的方法。然后是 `@Before`注解的方法，然后这两个都通过了，走核心代码，核心代码走完，无论核心有没有返回值，都会走 `@After`方法。然后如果程序无异常，正常返回就走 `@AfterReturn`,有异常就走 `@AfterThrowing`
+
+
+
+> 创建切面类
+
+```java
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.stereotype.Component;
+//切面类
+@Aspect
+@Component
+public class MyAspect {
+    // 用于取代：<aop:pointcut expression="execution(*com.mengma.dao..*.*(..))" id="myPointCut"/>
+    // 要求：方法必须是private，没有值，名称自定义，没有参数
+    @Pointcut("execution(*com.mengma.dao..*.*(..))")
+    private void myPointCut() {
+    }
+    // 前置通知
+    @Before("myPointCut()")
+    public void myBefore(JoinPoint joinPoint) {
+        System.out.print("前置通知，目标：");
+        System.out.print(joinPoint.getTarget() + "方法名称:");
+        System.out.println(joinPoint.getSignature().getName());
+    }
+    // 返回通知
+    @AfterReturning(value = "myPointCut()")
+    public void myAfterReturning(JoinPoint joinPoint) {
+        System.out.print("返回通知，方法名称：" + joinPoint.getSignature().getName());
+    }
+    // 环绕通知
+    @Around("myPointCut()")
+    public Object myAround(ProceedingJoinPoint proceedingJoinPoint)throws Throwable {
+        System.out.println("环绕开始"); // 开始
+        Object obj = proceedingJoinPoint.proceed(); // 执行当前目标方法
+        System.out.println("环绕结束"); // 结束
+        return obj;
+    }
+    // 异常通知
+    @AfterThrowing(value = "myPointCut()", throwing = "e")
+    public void myAfterThrowing(JoinPoint joinPoint, Throwable e) {
+        System.out.println("异常通知" + "出错了" + e.getMessage());
+    }
+    // 后置通知
+    @After("myPointCut()")
+    public void myAfter() {
+        System.out.println("后置通知");
+    }
+}
+```
+
+> spring配置文件增加
+
+```xml
+    <!-- 扫描含com.mengma包下的所有注解 -->
+    <context:component-scan base-package="com.mengma"/>
+    <!-- 开启切面自动代理 -->
+    <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+```
+
+
+
+### Spring 生命周期
+
+`对于普通的 Java 对象来说，它们的生命周期就是`
+
+- 实例化
+- 该对象不再被使用时通过垃圾回收机制进行回收
+
+`对于 Spring Bean 的生命周期来说`
+
+- 实例化 Instantiation
+- 属性赋值 Populate
+- 初始化 Initialization
+- 销毁 Destruction
+
+`实例化 -> 属性赋值 -> 初始化 -> 销毁`
+
+​    ![0](https://i.loli.net/2021/10/14/fQsBklbyEZz75LV.jpg)
+
+图 1 Bean 的生命周期
+
+Bean 生命周期的整个执行过程描述如下。
+
+1）根据配置情况 `调用 Bean 构造方法 或 工厂方法 实例化 Bean`。
+
+2）利用 `依赖注入`完成 Bean 中所有属性值的配置注入。
+
+3）如果 Bean 实现了 BeanNameAware 接口，则 Spring 调用 Bean 的 `setBeanName() `方法传入当前 Bean 的 id 值。
+
+4）如果 Bean 实现了 BeanFactoryAware 接口，则 Spring 调用 `setBeanFactory()` 方法传入当前工厂实例的引用。
+
+5）如果 Bean 实现了 ApplicationContextAware 接口，则 Spring 调用 `setApplicationContext()` 方法传入当前 ApplicationContext 实例的引用。
+
+6）如果 BeanPostProcessor 和 Bean 关联，则 Spring 将调用BeanPostProcessor接口的 `预初始化方法 postProcessBeforeInitialzation() `对 Bean 进行加工操作，此处非常重要，Spring 的 AOP 就是利用它实现的。
+
+7）如果 Bean 实现了 InitializingBean 接口，则 Spring 将调用 `afterPropertiesSet() `方法。
+
+8）如果在配置文件中通过 `init-method` 属性指定了初始化方法，则调用该初始化方法。
+
+9）如果 BeanPostProcessor 和 Bean 关联，则 Spring 将调用BeanPostProcessor接口的`后初始化方法 postProcessAfterInitialization()`。此时，Bean 已经可以被应用系统使用了。
+
+10）根据作用范围决定不同的处理方法
+
+如果在 中指定了该 Bean 的作用范围为 `scope="singleton"`，则将该 Bean 放入 `Spring IOC 的缓存池`中，将触发 Spring 对该 Bean 的生命周期管理；
+
+如果在 中指定了该 Bean 的作用范围为 `scope="prototype"`，则将该 Bean 交给 `调用者`，调用者管理该 Bean 的生命周期，Spring 不再管理该 Bean。
+
+11）如果 Bean 实现了 DisposableBean 接口，则 Spring 会调用 `destory()`方法将 Spring 中的 Bean 销毁；如果在配置文件中通过 `destory-method` 属性指定了 Bean 的销毁方法，则 Spring 将调用该方法对 Bean 进行销毁。
+
+总结：Spring 为 Bean 提供了细致全面的生命周期过程，通过实现特定的接口或属性设置，都可以对 Bean 的生命周期过程产生影响。虽然可以随意配置属性，但是建议不要过多地使用 Bean 实现接口，因为这样会导致代码和 Spring 的聚合过于紧密。
+
+### Spring 循环依赖
+
+结合Spring的生命周期：实例化Bean，设置属性，初始化等环节思考，也就是Spring的创建到消亡过程去思考的它的循环依赖问题。避免使用`构造函数`设置循环依赖的属性，可通过 `setter/field属性`设置循环依赖属性
+
+Spring内部有三级缓存：
+
+- singletonObjects 一级缓存，用于保存实例化、注入、初始化完成的bean实例
+- earlySingletonObjects 二级缓存，用于保存实例化完成的bean实例
+- singletonFactories 三级缓存，用于保存bean创建工厂，以便于后面扩展有机会创建代理对象。
+
+`对象出现的顺序：SingletonFactories -> earlySingletonObjects -> singletonObjects`
+
+下面用一张图告诉你，spring是如何解决循环依赖的：
+
+![image-20211014105840540](https://i.loli.net/2021/10/14/t4ymsErSdHgMYf9.png)
+
+
+
+> 循环依赖注入过程
+
+让我们来分析一下“A的某个field或者setter依赖了B的实例对象，同时B的某个field或者setter依赖了A的实例对象”这种循环依赖的情况。A首先完成了初始化的第一步，并且将自己提前曝光到singletonFactories中，此时进行初始化的第二步，发现自己依赖对象B，此时就尝试去get(B)，发现B还没有被create，所以走create流程，B在初始化第一步的时候发现自己依赖了对象A，于是尝试get(A)，尝试一级缓存singletonObjects(肯定没有，因为A还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），尝试三级缓存singletonFactories，由于 `A通过ObjectFactory将自己提前曝光`了，所以B能够通过 `ObjectFactory.getObject`拿到A对象(虽然A还没有初始化完全，但是总比没有好呀)，B拿到A对象后顺利完成了初始化阶段1、2、3，完全初始化之后将自己放入到一级缓存singletonObjects中。此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，进去了一级缓存singletonObjects中，而且更加幸运的是，由于B拿到了A的对象引用，所以B现在hold住的A对象完成了初始化。
+
+
+
+使用三级缓存实现提前曝光的过程，Bean的查找过程，先从一级缓存SingletonObject中查找有无对象B，再去二级缓存earlySingletonObject中查找，再去三级缓存singletonFactories查找，在三级缓存中找对象A（未完成创建），对象B拿到对象A的引用，完成populateBean，最终把对象B存到SingletonObjects中。再去操作对象A的实例化。
+
+
+
+
 
 ### Spring 作用域
 
-### Spring 设计模式
-
-> 工厂模式
-
-> 单例模式
-
-> 模版方法
-
-> 代理模式（Spring Aop）
-
-> 适配器模式（Spring MVC的适配器）
-
-> 观察者模式（监听）
-
-> 装饰着模式（扩展属性和行为）
+- singleton : 唯一 bean 实例，Spring 中的 bean 默认都是单例的。
+- prototype : 每次请求都会创建一个新的 bean 实例。
+- request : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP request 内有效。
+- session : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP session 内有效。
+- global-session： 全局 session 作用域，仅仅在基于 Portlet 的 web 应用中才有意义，Spring5 已经没有了。Portlet 是能够生成语义代码（例如：HTML）片段的小型 Java Web 插件。它们基于 portlet 容器，可以像 servlet 一样处理 HTTP 请求。但是，与 servlet 不同，每个 portlet 都有不同的会话。
 
 ### Spring 注解
 
@@ -1144,7 +1462,9 @@ redis 突然set很多key，单线程会不会长时间阻塞
 
 @Autowired 与 @Resource 区别
 
-### 事务传播行为
+### Spring事务
+
+#### 事务传播行为
 
 ```java
 import org.springframework.transaction.annotation.Isolation;
@@ -1186,6 +1506,26 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 同一类中自调用方法，没有事务注解的方法调用有事务注解的方法，会使有事务注解的方法失效。
 
+#### 事务隔离级别
+
+- 读取未提交（Read Uncommitted）：事务可以读取未提交的数据，也称作脏读（Dirty Read）。一般很少使用。
+- 读取已提交（Read Committed）：是大都是 DBMS （如：Oracle, SQLServer）默认事务隔离。执行两次同意的查询却有不同的结果，也叫不可重复读。
+- 可重复读（Repeatable Read）：是 MySQL 默认事务隔离级别。能确保同一事务多次读取同一数据的结果是一致的。可以解决脏读的问题，但理论上无法解决幻读（Phantom Read）的问题。
+- 可串行化（Serializable）：是最高的隔离级别。强制事务串行执行，会在读取的每一行数据上加锁，这样虽然能避免幻读的问题，但也可能导致大量的超时和锁争用的问题。很少会应用到这种级别，只有在非常需要确保数据的一致性且可以接受没有并发的应用场景下才会考虑。
+
+| solation Level   | 脏读可能性（Dirty Read） | 不可重复读可能性（Non Repeatable Read） | 幻读可能性（Phantom Read） |
+| ---------------- | ------------------------ | --------------------------------------- | -------------------------- |
+| read Uncommitted | Yes                      | Yes                                     | Yes                        |
+| read Committed   | -                        | Yes                                     | Yes                        |
+| repeatable Read  | -                        | -                                       | Yes                        |
+| serializable     | -                        | -                                       | -                          |
+
+> 脏读/不可重复读/幻读
+
+- 脏读：读取其他事务还没提交的数据。
+- 不可重复读：同一条数据两次查询有不同的结果，因为其它事务可能在UPDATE操作。
+- 幻读：事务 B 根据条件查询到了 N 条数据，但这时事务 A， INSERT或 DELETE了 M 条符合事务 B 查询条件的数据。事务 B 再次查询结果就和上一次不一致了，得到了 N+M 条数据。
+
 ### Spring 单例Bean的线程安全问题
 
 存在安全问题，当多个线程修改成员属性中含有写操作的对象时，会有线程安全的问题。
@@ -1194,25 +1534,23 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 修改Bean的作用域 prototype
 
-### Spring 生命周期
+### Spring 设计模式
 
-根据配置信息调用构造方法或者工厂方法实例化Bean
+[详情参考](https://note.youdao.com/s/WgCbrBRb)
 
-依赖注入属性
+> 工厂模式
 
-实现接口的话，设置相应的值
+> 单例模式
 
-BeanPostProcessor `postProcessBeforeInitialization()` 预初始化方法
+> 模版方法
 
-InitializingBean的 `afterPropertiesSet()` 方法
+> 代理模式（Spring Aop）
 
-自定义的初始化方法
+> 适配器模式（Spring MVC的适配器）
 
-BeanPostProcessor `postProcessAfterInitialization()` 后初始化方法
+> 观察者模式（监听）
 
-Singleton直接交给SpringIOC容器管理Bean的生命周期/propotype由调用者决定。
-
-销毁Bean ，实现了DisposableBean接口则调用 `destroy()` 销毁方法， Bean配置中含有 `destroy-method` 属性，调用指定销毁方法。
+> 装饰着模式（扩展属性和行为）
 
 ### 未提问内容
 
@@ -1220,9 +1558,35 @@ Singleton直接交给SpringIOC容器管理Bean的生命周期/propotype由调用
 
 ## 5.2 SpringMVC
 
-### 工作原理是怎么样的？
+### 工作原理
 
-前端控制器/处理器映射器/视图解析器
+- `前端控制器DispatcherServlet`：Spring MVC 所有的请求都经过 DispatcherServlet 来统一分发，在 DispatcherServlet 将请求分发给 Controller 之前需要借助 Spring MVC 提供的 HandlerMapping 定位到具体的 Controller。
+
+- `处理器映射器HandlerMapping`：HandlerMapping 接口负责完成客户请求到 Controller 映射。
+
+- `处理器适配器HandlerAdapter：`调用具体的方法对用户发来的请求来进行处理。
+
+- `处理器Handler（Controller）`：Controller 接口将处理用户请求，这和 [Java](http://c.biancheng.net/java/) Servlet 扮演的角色是一致的。一旦 Controller 处理完用户请求，将返回 ModelAndView 对象给 DispatcherServlet 前端控制器，ModelAndView 中包含了模型（Model）和视图（View）。
+  - 从宏观角度考虑，DispatcherServlet 是整个 Web 应用的控制器；从微观考虑，Controller 是单个 Http 请求处理过程中的控制器，而 ModelAndView 是 Http 请求过程中返回的模型（Model）和视图（View）。
+
+- `视图解析器ViewResolver`：ViewResolver 接口（视图解析器）在 Web 应用中负责查找 View 对象，从而将相应结果渲染给客户。
+
+​    ![0](https://i.loli.net/2021/10/14/H97isnqQkz6xoSc.png)
+
+图 1 Spring MVC 工作原理图
+
+从图 1 可总结出 Spring MVC 的工作流程如下：
+
+1. 客户端（浏览器）发送请求，直接请求到 DispatcherServlet。
+2. DispatcherServlet 根据请求信息调用 HandlerMapping，解析请求对应的 Handler。
+3. 解析到对应的 Handler（也就是我们平常说的 Controller 控制器）后，开始由 HandlerAdapter 适配器处理。
+4. HandlerAdapter 会根据 Handler 来调用真正的处理器来处理请求，并处理相应的业务逻辑。
+5. 处理器处理完业务后，会返回一个 ModelAndView 对象，Model 是返回的数据对象，View 是个逻辑上的 View。
+6. ViewResolver 会根据逻辑 View 查找实际的 View。
+7. DispaterServlet 把返回的 Model 传给 View（视图渲染）。
+8. 把 View 返回给请求者（浏览器）
+
+`总结：前端控制器会根据处理器映射器传过来的Controller与已经注册好的处理器适配器一一匹配。如果找到处理器适配器与Controller匹配，则调用处理器适配器的handler方法，通过反射机制执行Controller的具体的方法来获得模型试图。通过视图解析器解析视图，然后把模型数据填充到视图中，即渲染视图，响应用户请求。`
 
 ### 过滤器和拦截器的区别
 
@@ -1246,7 +1610,31 @@ Singleton直接交给SpringIOC容器管理Bean的生命周期/propotype由调用
 
 ### 数据转换方式配置
 
-json转换
+json转换 
+
+### 常用注解
+
+> @RequestMapping @GetMapping() @PostMapping
+
+
+
+> @PathVariable与@RequestParam
+
+
+
+> @ResponseBody与@RequestBody
+
+
+
+> @Controller与@RestController
+
+
+
+> @Resource、@Qualifier与@Autowired
+
+
+
+
 
 ### 未提问内容
 
@@ -1258,21 +1646,75 @@ x 正数的值越小，该servlet的优先级越高，应用启动时就越先�
 
 通过注解获取参数
 
-常用注解
-
 ## 5.3 Spring Boot
 
-### Spring Boot的自动配置原理
+### 自动配置原理
 
-### Spring Boot 配置加载顺序
+@SpringBootApplication -》 @EnableAutoConfiguration，SpringApplication.run(...)的内部就会执行selectImports()方法，找到所有 JavaConfig自动配置类的全限定名对应的class
+
+META-INF/spring.factories
+
+@EnableAutoConfiguration -》xxxxAutoConfiguration
+
+
+
+自动生效
+
+- @ConditionalOnBean：当容器里有指定的bean的条件下。
+- @ConditionalOnMissingBean：当容器里不存在指定bean的条件下。
+- @ConditionalOnClass：当类路径下有指定类的条件下。
+- @ConditionalOnMissingClass：当类路径下不存在指定类的条件下。
+- @ConditionalOnProperty：指定的属性是否有指定的值，比如@ConditionalOnProperties(prefix=”xxx.xxx”, value=”enable”, matchIfMissing=true)，代表当xxx.xxx为enable时条件的布尔值为true，如果没有设置的情况下也为true。
+
+
+
+@EnableConfigurationProperties -》 XXXProperties
+
+
+
+### 配置加载顺序
+
+- 命令行参数。所有的配置都可以在命令行上进行指定；
+- 来自java:comp/env的JNDI属性；
+- Java系统属性（System.getProperties()）；
+- 操作系统环境变量 ；
+- jar包外部的application-{profile}.properties或application.yml(带spring.profile)配置文件
+- jar包内部的application-{profile}.properties或application.yml(带spring.profile)配置文件 再来加载不带profile
+- jar包外部的application.properties或application.yml(不带spring.profile)配置文件
+- jar包内部的application.properties或application.yml(不带spring.profile)配置文件
+- @Configuration注解类上的@PropertySource
+
+根据第7条，我们只要在jar包同目录外放置一个application.properties配置文件，就会起作用，同时这个配置文件的优先级还比jar内的高，这个配置很有作用！！
+
+### YAML 配置
+
+
+
+### 核心配置文件
+
+> Bootstrap.properties 和 application.properties
+
+
+
+### 安全问题
+
+> Spring Security 和 Shiro
+
+
+
+> 跨域CSRF
+
+
+
+### 前后端分离第三方工具Swagger
 
 
 
 ## 5.4 Spring Cloud
 
-## 5.5 Spring Security
+### 5.4.1 Spring Security
 
-### 工作原理
+#### 工作原理
 
 ​    认证和授权
 
@@ -1310,13 +1752,31 @@ BCrypt加密算法
 
 ​	配置到认证管理器的提供者中加密方式
 
-## Spring Cloud Alibaba
+## 5.5 Spring Cloud Alibaba
+
+注册中心和配置中心(Nacos)
+
+分布式服务框架(Dubbo)
+
+消息队列(RocketMQ)
+
+分布式解决方案(Seata)
+
+断路器(Sentinel)
 
 
 
-## Spring Cloud Netflix
+## 5.6 Spring Cloud Netflix
 
+服务发现(Eureka)
 
+断路器(Hystrix)
+
+智能路由(Zuul)
+
+客户端负载均衡(Ribbon-Feign)
+
+服务之间的调用（RESTFUL）
 
 
 
@@ -1325,6 +1785,14 @@ BCrypt加密算法
 # 6. 中间件
 
 ## 6.1 Mybatis
+
+### 工作原理
+
+
+
+### 核心组件
+
+
 
 ### {}和${}的区别
 
@@ -1388,13 +1856,15 @@ Headers Exchange 头部路由
 
 ## 6.3 Dubbo
 
+### 失败重试与超时重试机制
+
 ### 未提问内容
 
 
 
 ## 6.4 Zookeeper
 
-### zookeeper选举机制
+### Zookeeper选举机制
 
 ### 未提问内容
 
@@ -1402,7 +1872,15 @@ Headers Exchange 头部路由
 
 # 7. 计算机网络
 
-## TCP三次握手和四次挥手
+## 7.1 计算机网络体系结构：OSI/TCP/IP
+
+
+
+## 7.2 TCP三次握手和四次挥手
+
+### TCP三次握手
+
+### TCP四次挥手
 
 标识：
 
@@ -1416,19 +1894,84 @@ TIME_WAIT（确认服务端已经收到最后发出的确认信息） LAST_WAIT�
 
 整个过程的头部信息的变化
 
-## HTTP与HTTPS的区别
+## 7.3 HTTP与HTTPS的区别
 
 安全性和资源消耗SSL（加密算法对称和非对称）/TLS 端口
 
-## 浏览器输入url后台经过什么步骤，最终把内容显示到浏览器
+## 7.4 浏览器输入url后的处理
+
+## 7.5 TCP与UDP协议
+
+
+
+
 
 ## 未提问内容
 
-线程通信
+## 线程通信
 
-进程通信
+## 进程通信
 
 # 10. 算法
+
+## 10.1 数据结构
+
+### 10.1.1 数组（Array）
+
+（静态数组、动态数组）
+
+
+### 10.1.2 栈（Stack）
+
+### 10.1.3 链表（Linked List）
+
+（单向链表、双向链表、循环链表）
+
+### 10.1.4 队列（Queue）
+
+### 10.1.5 树（Tree）
+
+（二叉树、查找树、平衡树（AVL树/红黑树）、B树、B+树）
+
+
+### 10.1.6 散列表（Hash）
+
+### 10.1.7 堆（Heap）
+
+
+### 10.1.8 图（Graph）
+
+
+
+## 10.2 常规算法
+
+### 排序算法
+
+
+
+### 查找算法
+
+
+
+### 回溯算法
+
+
+
+### 动态规划算法
+
+
+
+### 双指针算法
+
+
+
+### 滑动窗口算法
+
+
+
+### 递归算法（二叉树）
+
+
 
 # 98. 前端知识
 
@@ -1443,6 +1986,10 @@ AngularJs
 ​    indexController.js 响应后台数据
 
 ​    {{}} 变量
+
+
+
+
 
 # 99. 自我介绍+项目拆解
 
