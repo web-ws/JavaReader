@@ -1754,29 +1754,29 @@ BCrypt加密算法
 
 ## 5.5 Spring Cloud Alibaba
 
-注册中心和配置中心(Nacos)
+### 注册中心和配置中心(Nacos)
 
-分布式服务框架(Dubbo)
+### 分布式服务框架(Dubbo)
 
-消息队列(RocketMQ)
+### 消息队列(RocketMQ)
 
-分布式解决方案(Seata)
+### 分布式解决方案(Seata)
 
-断路器(Sentinel)
+### 断路器(Sentinel)
 
 
 
 ## 5.6 Spring Cloud Netflix
 
-服务发现(Eureka)
+### 服务发现(Eureka)
 
-断路器(Hystrix)
+### 断路器(Hystrix)
 
-智能路由(Zuul)
+### 智能路由(Zuul)
 
-客户端负载均衡(Ribbon-Feign)
+### 客户端负载均衡(Ribbon-Feign)
 
-服务之间的调用（RESTFUL）
+### 服务之间的调用（RESTFUL）
 
 
 
@@ -1784,13 +1784,15 @@ BCrypt加密算法
 
 # 6. 中间件
 
-## 6.1 Mybatis
+## 6.1 持久化框架
 
-### 工作原理
+### 6.1.1 Mybatis
+
+#### 工作原理
 
 
 
-### 核心组件
+#### 核心组件
 
 
 
@@ -1854,7 +1856,7 @@ Headers Exchange 头部路由
 
 
 
-## 6.3 Dubbo
+## 6.3 分布式服务框架Dubbo
 
 ### 失败重试与超时重试机制
 
@@ -1862,9 +1864,11 @@ Headers Exchange 头部路由
 
 
 
-## 6.4 Zookeeper
+## 6.4 注册中心
 
-### Zookeeper选举机制
+### 6.4.1 Zookeeper
+
+#### Zookeeper选举机制
 
 ### 未提问内容
 
