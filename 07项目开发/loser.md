@@ -1534,6 +1534,115 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 修改Bean的作用域 prototype
 
+### 注解
+
+#### 常用注解
+
+通过xml方式实现Bean注入，实例名称：id 实例类型：class
+
+```xml
+<bean id="person2" class="com.mengma.assembly.Person"> 
+```
+
+1）@Component -》@Component("")：全局注解
+
+可以使用此注解描述 Spring 中的 Bean，但它是一个泛化的概念，仅仅表示一个组件（Bean），并且可以作用在任何层次；使用时只需将该注解标注在相应类上即可。
+
+2）@Repository -》 @Repository("")：对DAO实现类进行注解
+
+用于将数据访问层（DAO层）的类标识为 Spring 中的 Bean，其功能与 @Component 相同。
+
+3）@Service -》 @Service("")：对service实现类进行注解
+
+通常作用在业务层（Service 层），用于将业务层的类标识为 Spring 中的 Bean，其功能与 @Component 相同。
+
+4）@Controller -》 @Controller("")：对web层Controller实现类进行注解
+
+通常作用在控制层（如 [Struts2](http://c.biancheng.net/struts2/) 的 Action），用于将控制层的类标识为 Spring 中的 Bean，其功能与 @Component 相同。
+
+5）@Autowired -》  @Autowired：默认按照实例类型装配；
+
+用于对 Bean 的属性变量、属性的 Set 方法及构造函数进行标注，配合对应的注解处理器完成 Bean 的自动配置工作。默认按照 Bean 的类型进行装配。
+
+6）@Qualifier -》 @Qualifier（name="xxx"）：默认按照实例名称装配；
+
+与 @Autowired 注解配合使用，会将默认的按 Bean 类型装配修改为按 Bean 的实例名称装配，Bean 的实例名称由 @Qualifier 注解的参数指定。
+
+7）@Resource  -》  @Resource（name="xxx",type="xxx"）融合了Autowired和Qualifier两种注解
+
+其作用与 Autowired 一样。其区别在于 @Autowired 默认按照 Bean 类型装配，而 @Resource 默认按照 Bean 实例名称进行装配。
+
+@Resource 中有两个重要属性：name 和 type。
+
+- Spring 将 name 属性解析为 Bean 实例名称，type 属性解析为 Bean 实例类型。即是：如果指定 name 属性，则按实例名称进行装配；如果指定 type 属性，则按 Bean 类型进行装配。
+- 默认按照实例名称装配，如果不能匹配，则再按照 Bean 实例类型进行装配；如果都无法匹配，则抛出 NoSuchBeanDefinitionException 异常。
+
+间歇注解：  @Scope("prototype")：定义Bean的作用范围  @Value("")：定义属性值  @PostConstruct和@PreDestroy两个注解相当于bean的init-method和destory-method属性的功能
+
+#### 属性注入
+
+1）一般属性注入@Value
+
+方法一：Spring为我们提供了注解 @value,用于对一般属性注入，可以不用提供set方法，它是通过反射的Field赋值,破坏了封装性
+
+```java
+@Value("Tom") 
+private String nmae;
+
+@Value("22")
+private int age;
+```
+
+方法二：提供set方法的也可以这样注入，推荐使用
+
+```java
+@Value("Tom") 
+Public void setName(String name){   
+    this.name = name; 
+}
+```
+
+然而在实际开发者中，尽管实际是破坏了对象的封装性，但开发者还是喜欢用第一种方式注入属性
+
+2）引用类型注入
+
+```java
+//会根据类型自动注入
+@Autowired
+private UserService userservice;
+
+//@Autowired可以对类成员变量的set方进行注解。
+//对set方法使用注解，UserDao的实例就会被注入进来
+@Autowired
+public void  setUserdao(UserDao userdao){
+     this.userdao=userdao;
+}
+```
+
+#### @autowired 与 @resource 
+
+`byName，byType`方式
+
+问题：@Autowired默认按类型匹配的方式，在容器中查找匹配的Bean，当有且只有一个匹配的Bean时，Spring将其注入到@Autowired注解的变量中。但是如果容器中有超过一个以上的匹配Bean时，例如有两个UserService类型的Bean，这时就不知道将哪个Bean注入到变量中，就会出现异常
+
+为了解决这个问题，Spring可以通过@Qualifier注解来注入指定Bean的名称。
+
+```java
+public class UserAction {
+     @Autowired 
+     //指定指定Bean的名称
+     @Qualifier("userservice")
+     private UserService userservice;
+ }
+```
+
+还有一种更为便捷的注解方式注入属性@Resource,相当于@Autowired 和@Qualifier一起使用
+
+```java
+@Resource(name="userservice")
+private UserService userservice;
+```
+
 ### Spring 设计模式
 
 [详情参考](https://note.youdao.com/s/WgCbrBRb)
@@ -1560,15 +1669,11 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 ### 工作原理
 
-- `前端控制器DispatcherServlet`：Spring MVC 所有的请求都经过 DispatcherServlet 来统一分发，在 DispatcherServlet 将请求分发给 Controller 之前需要借助 Spring MVC 提供的 HandlerMapping 定位到具体的 Controller。
-
-- `处理器映射器HandlerMapping`：HandlerMapping 接口负责完成客户请求到 Controller 映射。
-
-- `处理器适配器HandlerAdapter：`调用具体的方法对用户发来的请求来进行处理。
-
-- `处理器Handler（Controller）`：Controller 接口将处理用户请求，这和 [Java](http://c.biancheng.net/java/) Servlet 扮演的角色是一致的。一旦 Controller 处理完用户请求，将返回 ModelAndView 对象给 DispatcherServlet 前端控制器，ModelAndView 中包含了模型（Model）和视图（View）。
+- `前端控制器DispatcherServlet`：Spring MVC所有请求都要经过前端控制器 `DispatcherServlet` 借助处理器映射器 `HandlerMapping`映射到对应 `Controller` 。
+- `处理器映射器HandlerMapping`：HandlerMapping 接口负责完成客户请求映射到 对应 Controller 。
+- `处理器适配器HandlerAdapter`：调用具体的方法对用户发来的请求来进行处理。
+- `处理器Handler（Controller）`：Controller 接口将处理用户请求，将返回 ModelAndView 对象给 DispatcherServlet 前端控制器，ModelAndView 中包含了模型（Model）和视图（View）。
   - 从宏观角度考虑，DispatcherServlet 是整个 Web 应用的控制器；从微观考虑，Controller 是单个 Http 请求处理过程中的控制器，而 ModelAndView 是 Http 请求过程中返回的模型（Model）和视图（View）。
-
 - `视图解析器ViewResolver`：ViewResolver 接口（视图解析器）在 Web 应用中负责查找 View 对象，从而将相应结果渲染给客户。
 
 ​    ![0](https://i.loli.net/2021/10/14/H97isnqQkz6xoSc.png)
@@ -1577,22 +1682,30 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 从图 1 可总结出 Spring MVC 的工作流程如下：
 
-1. 客户端（浏览器）发送请求，直接请求到 DispatcherServlet。
-2. DispatcherServlet 根据请求信息调用 HandlerMapping，解析请求对应的 Handler。
-3. 解析到对应的 Handler（也就是我们平常说的 Controller 控制器）后，开始由 HandlerAdapter 适配器处理。
-4. HandlerAdapter 会根据 Handler 来调用真正的处理器来处理请求，并处理相应的业务逻辑。
+1. 客户端（浏览器）发送请求，直接请求到 前端控制器 `DispatcherServlet`。
+2. 前端控制器 `DispatcherServlet` 根据请求信息调用 处理器映射器 `HandlerMapping`，解析请求对应的 Controller。
+3. 解析到对应的 Controller 后，开始由 处理器适配器 `HandlerAdapter` 处理。
+4. 处理器适配器 `HandlerAdapter` 会根据 Handler 来调用真正的处理器来处理请求，并处理相应的业务逻辑。
 5. 处理器处理完业务后，会返回一个 ModelAndView 对象，Model 是返回的数据对象，View 是个逻辑上的 View。
 6. ViewResolver 会根据逻辑 View 查找实际的 View。
 7. DispaterServlet 把返回的 Model 传给 View（视图渲染）。
 8. 把 View 返回给请求者（浏览器）
 
-`总结：前端控制器会根据处理器映射器传过来的Controller与已经注册好的处理器适配器一一匹配。如果找到处理器适配器与Controller匹配，则调用处理器适配器的handler方法，通过反射机制执行Controller的具体的方法来获得模型试图。通过视图解析器解析视图，然后把模型数据填充到视图中，即渲染视图，响应用户请求。`
+`总结：所有的请求都经过前端控制器，而它借助处理器映射器找到与请求对应的Controller。如果找到匹配项，则调用处理器适配器的handler方法，通过反射机制执行Controller的具体的方法获得模型视图。再通过视图解析器解析视图，然后通过视图渲染把模型数据填充到视图中，最后把视图响应给用户。`
 
-### 过滤器和拦截器的区别
+### 过滤器和拦截器
+
+![image-20211015142835907](https://i.loli.net/2021/10/15/UGpJjKd2Nblgv3S.png)
+
+> 两者的区别
+
+`拦截器（Interceptor）是基于Java的反射机制，而过滤器（Filter）是基于函数回调`。从灵活性上说拦截器功能更强大些，Filter能做的事情，拦截器都能做，而且可以在请求前，请求后执行，比较灵活。Filter主要是针对URL地址做一个编码的事情、过滤掉没用的参数、安全校验，太细的话，还是建议用interceptor。不过还是根据不同情况选择合适的。
+
+
 
 过滤器：依赖于servlet容器，在web.xml中配置，在Javaweb的应用是对请求request的数据提前做处理，比如说修改字符集编码格式，然后再传入到servlet或者controller进行后续的业务处理。
 
-拦截器：依赖于Spring MVC 框架，在springMVC配置文件。
+拦截器：依赖于Spring MVC 框架，在Spring MVC配置文件。
 
 `preHandle`：调用Controller的处理方法之前，用户登录验证。
 
@@ -1600,17 +1713,46 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 `afterCompletion`：渲染视图结束之后。资源清理，记录日志信息。
 
-执行顺序：
+> 执行顺序
 
-多个Filter，放行前按配置顺序执行，放行后按配置倒序执行。`队列`
+多个Filter，放行前按配置顺序执行，放行后按配置倒序执行。`栈`
 
-多个Interceptor，preHandle/postHandle按配置顺序执行，afterCompletion按配置倒序执行。`栈`
+![image-20211015114310475](https://i.loli.net/2021/10/15/Is68DKgQRLJGEPz.png)
 
-总结：前端控制器会根据处理器映射器传过来的Controller与已经注册好的处理器适配器一一匹配。如果找到处理器适配器与Controller匹配，则调用处理器适配器的handler方法，通过反射机制执行Controller的具体的方法来获得模型视图。通过视图解析器解析视图，然后把模型数据填充到视图中，即渲染视图，响应用户请求。 
+多个Interceptor，preHandle/postHandle按配置顺序执行 `栈`，afterCompletion按配置倒序执行。`队列`
+
+![image-20211015114225453](https://i.loli.net/2021/10/15/lzgB1hSfjR8iYHC.png)
+
+
 
 ### 数据转换方式配置
 
-json转换 
+- `MultipartResolver` 用于处理文件上传，当收到请求时 DispatcherServlet 的 checkMultipart() 方法会调用 MultipartResolver 的 isMultipart() 方法判断请求中是否包含文件。如果请求数据中包含文件，则调用 MultipartResolver 的 resolveMultipart() 方法对请求的数据进行解析，然后将文件数据解析成 MultipartFile 并封装在 MultipartHttpServletRequest (继承了 HttpServletRequest) 对象中，最后传递给 Controller
+- `MappingJacksonHttpMessageConverter` 用于把Java对象转换成Json对象或者XML文档，同时也可以把Json对象转换成Java对象。
+
+```xml
+<bean class="org.springframework.web
+             .servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+    <property name="messageConverters">
+        <list>
+            <bean class="org.springframework.http
+                         .converter.json.MappingJacksonHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list> <!--返回字符串格式json-->
+                        <value>application/json;charset=UTF-8</value>
+                    </list>
+                </property>
+            </bean>
+        </list>
+    </property>
+</bean>
+<bean id="multipartResolver" 
+      class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="maxUploadSize" value="102400000"></property>
+</bean>
+```
+
+
 
 ### 常用注解
 
@@ -1631,6 +1773,8 @@ json转换
 
 
 > @Resource、@Qualifier与@Autowired
+
+
 
 
 
