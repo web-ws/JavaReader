@@ -949,11 +949,53 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 
 ### 数据类型
 
-> Redis 常见的数据类型以及它们的应用
+> string
 
-string list hast set zset
+1. 常用命令: set、get、strlen、exists、decr、incr、setex 等等。
+2. 应用场景 ：一般常用在计数的场景，比如用户的访问次数、热点文章的点赞转发数量等。
+
+> list：双向链表
+
+1. 常用命令: rpush、lpop、lpush、rpop、lrange、llen 等。
+2. 应用场景: 发布与订阅或者消息队列、慢查询。
+
+> hash
+
+1. 常用命令： hset、hmset、hexists、hget、hgetall、hkeys、hvals 等。
+2. 应用场景: 系统中对象数据的存储。
+
+> 无序集合set：
+
+1. 常用命令：sadd、spop、smembers、sismember、scard、sinterstore、sunion 等。
+2. 应用场景：需要存放的数据不能重复以及需要获取多个数据源交集和并集等场景：全局去重，计算共同喜好，全部喜好，独有喜好。
+
+> 有序集合zset：TopN操作。
+
+1. 常用命令： zadd、zcard、zscore、zrange、zrevrange、zrem 等。
+2. 应用场景： 需要对数据根据某个权重进行排序的场景。`比如在直播系统中，实时排行信息包含直播间在线用户列表，各种礼物排行榜，弹幕消息`（可以理解为按消息维度的消息排行榜）等信息。
 
 ### 过期策略和内存淘汰策略
+
+核心思想：`Redis过期键删除策略：定期删除（每隔XXXs随机取数，检查是否key过期）+惰性删除（获取Key检查是否过期）+内存达到最大值后，内存淘汰策略（调用内存allkeys-lru）`
+
+
+
+- 命令行设置
+
+```shell
+config set maxmemory-policy allkeys-lru
+config set maxmemory 5gb
+```
+
+
+- 配置文件redis.conf中设置
+
+```shell
+maxmemory-policy volatile-lru
+maxmemory 5gb
+```
+
+
 
 > Redis 过期数据删除策略
 
@@ -962,20 +1004,15 @@ expire
 
 > 内存回收策略
 
-删除过期键对象：惰性删除（使用key时检查，不用不检查，会有内存泄漏的问题）和定时任务删除（过期键比例/快慢模式）
+删除过期键对象：惰性删除 + 定期删除
 
 如何判断数据是过期的：过期字典是保存数据过期的时间，过期字典的键指向key，值是long long的整形，毫秒精度的 UNIX 时间戳
 
 > 内存淘汰机制8种
 
+allkeys、volatile 与 lru、lfu、random组合 + volatile-ttl  /noevition（不回收）
 
-noeviction (不回收)
-
-volatile（过期属性）、allkeys
-
-lfu lru random
-
-Redis 8种内存淘汰机制
+Redis `8` 种内存淘汰机制
 
 lru lfu random
 
@@ -997,24 +1034,45 @@ volatile-ttl：在有 expire 属性的 key 范围内清理即将到期的 key
 
 noeviction：不回收，默认
 
-
 ### 线程模型
+
+`文件事件处理器（Redis单线程处理模型）`：多个套接字、IO多路复用程序、文件事件分派器、事件处理器（连接应答处理器、命令请求处理器、命令回复处理器）。
+
+![0](https://i.loli.net/2021/10/07/dLMhtOEgxsDbF3W.png)
+
+`整个过程：客户端与服务连接时，生成文件描述符fd，并把连接应答/读写/关闭命令绑定到文件描述符fd，然后监听文件描述符fd的命令。当命令产生时，交由文件事件处理器处理命令。`
+
+
 
 > Redis 单线程的优势，Redis为什么这么快 为啥Redis6.0引入多线程
 
-没有多线程上下文切换和重新调度开销
+单线程没有多线程上下文切换和重新调度开销
 
 纯内存访问
 
-`I/O多路复用程序 文件事件处理分发器`（当被监听的套接字准备好执⾏ 连接应答（accept）、读取（read）、写⼊（write）、关 闭（close）等操作时，与操作相对应的⽂件事件就会产⽣，这时⽂件事件处理器就会调⽤套接字之前关联好的事件处理器来处理这些事件。）
+`文件事件处理器`(看小结)
 
-epoll解决内核态轮询问题以及大批量的内核态拷贝，解决最大个数限制1024，大于2048
+`epoll`解决内核态轮询以及内核态大批量拷贝的问题，解决最大个数限制1024，大于2048
 
-
+`Redis6.0` 的多线程部分只是用来处理网络数据的读写和协议解析，执行命令仍然是单线程。
 
 ### 高可用架构设计
 
-> Redis高可用架构设计 哨兵和集群
+#### Redis主从架构
+
+主从节点建立`第一次建立连接`后，主节点全量复制生成RDB文件，新的命令缓存在内存中。
+
+RDB文件生成完毕后，把文件发送给从节点，从节点写入本地磁盘后，加载到内存中，接着又把内存中缓存命令发送给从节点，从节点同步数据。
+
+如果 master 和 slave 网络连接断掉了，从节点slave 会让 主节点master 从上次 `副本偏移量 replica offset` 开始继续复制，如果没有找到对应的 offset，那么就会执行一次 `resynchronization` 。
+
+![0](https://i.loli.net/2021/10/06/jHnh1zX9ci2TLwY.png)
+
+> key过期
+
+slave 不会过期 key，只会等待 master 过期 key。如果 master 过期了一个 key，或者通过 LRU 淘汰了一个 key，那么会模拟一条 del 命令发送给 slave。
+
+#### Redis高可用架构设计 哨兵和集群
 
 主从复制是高可用Redis的基础，哨兵和集群都是在主从复制基础上实现高可用的。主从复制主要实现了数据的多机备份，以及对于读操作的负载均衡和简单的故障恢复。
 
@@ -1039,20 +1097,50 @@ Redis-Cluster模式
 
 > 秒杀系统如何设计
 
-### 分布式
+### 分布式锁
+
+#### 并发竞争key的问题
+
+各个系统去抢分布式锁，基于zookeeper`临时有序节点`可以实现的分布式锁。大致思想为：每个客户端对某个方法获取分布式锁时，在方法对应的lock目录下面`创建临时顺序节点`，查找lock目录下的所有节点排序后`获取最小的节点`，如果是自己，则表示获取到锁，如果不是则`注册监听事件Watcher监听最小的节点`；监听到关注的节点被删除后，重新判断自己是否是所有节点排序后最小的节点，如果是获取锁，如果不是则重复以上步骤。同时，临时有序节点可以避免`服务宕机导致锁无法释放而产生死锁`的问题。完成业务流程后，删除对应的字节点`释放锁`。
+
+`临时节点/临时有序节点/持久节点/持久有序节点`
+
+#### 分布式锁Zookeeper与Redis比较
+
+| 分布式锁  | 优点                                                         | 缺点                                                         |
+| --------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Zookeeper | 1.有封装好的框架，容易实现<br/>2.有等待锁的队列，大大提升抢锁效率。 | 添加和删除节点性能较低                                       |
+| Redis     | Set和Del指令性能较高                                         | 1.实现复杂，需要考虑`超时，原子性，误删`等情形。<br/>2.没有等待锁的队列，只能在客户端自旋来等待，效率低下。 |
+
+
 
 ### 缓存异常
 
-[具体参考缓存Redis](/04架构设计/缓存Redis)
+[具体参考缓存Redis](/04架构设计/缓存Redis?id=_10-缓存异常)
+
+
+
+- 缓存雪崩（同一时间缓存大面积失效）
+- 缓存穿透（缓存没有数据）
+- 缓存击穿（热点数据失效）
+
+
+
 > Redis 缓存穿透 缓存雪崩
+
+
+
+
 
 （无效key）缓存穿透：缓存层找不到，存储层也没有，避免去后端存储层找数据
 
 缓存空对象：设置过期时间，存在缓存层和存储层时间窗口内，不一致的问题。（频繁变化实时性高）
 
-布隆过滤器拦截：新增和判断逻辑。隆过滤器说某个元素存在，小概率会误判。布隆过滤器说某个元素不在，那么这个元素一定不在。直接返回。（固定实时性低）
+布隆过滤器拦截：新增和判断逻辑。隆过滤器说某个元素存在，`小概率会误判`。布隆过滤器说某个元素不在，那么这个元素一定不在。直接返回。（固定实时性低）
 
 （失效key）缓存雪崩：同一时刻，缓存数据大面积失效，导致所有的请求都到了存储层，短时间接收大量的请求，有可能导致后端服务宕掉。
+
+
 
 ### 持久化
 
@@ -1060,7 +1148,7 @@ Redis-Cluster模式
 
 阻塞：fork操作过程中父进程会阻塞、AOF追加阻塞主线程（比较上一次同步时间，大于2s，阻塞）
 
-> 只追加文件AOF（append-only file）持久化:
+#### 只追加文件AOF（append-only file）持久化:
 
 配置参数 appendonly yes
 
@@ -1088,7 +1176,7 @@ no 让操作系统来决定应该何时进行同步
 
 文件重载加载load：
 
-> 快照（snapshotting）持久化（RDB）:
+#### 快照（snapshotting）持久化（RDB）:
 
 二进制文件 适用于备份，全量复制 灾难恢复
 
@@ -1100,15 +1188,17 @@ bgsave
 
 父进程执行fork操作，创建一个子进程（生成RDB文件，响应其他命令）
 
+### 缓存和数据库双写的一致性
+
+最终一致性（异步化）和强一致性（串行化）
 
 
-### Redis 如何保证缓存和数据库双写的一致性
 
-先更新数据库后删除缓存
+先更新数据库后删除缓存（防止缓存击穿问题）
 
-缓存延时双删
+缓存延时双删（确保一定把缓存删除成功）
 
-删除缓存重试机制
+删除缓存重试机制（消息队列RocketMQ）
 
 读取mysql的binlog日志异步删除缓存
 
@@ -1568,16 +1658,52 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有�
 
 与 @Autowired 注解配合使用，会将默认的按 Bean 类型装配修改为按 Bean 的实例名称装配，Bean 的实例名称由 @Qualifier 注解的参数指定。
 
-7）@Resource  -》  @Resource（name="xxx",type="xxx"）融合了Autowired和Qualifier两种注解
+#### @Autowired 与 @Resource(重点理解)
 
-其作用与 Autowired 一样。其区别在于 @Autowired 默认按照 Bean 类型装配，而 @Resource 默认按照 Bean 实例名称进行装配。
+@Autowired 默认 `按照类型名称byType方式` 装配；当同一个类出现多个实例Bean，会出现异常。通过 `@Qualifier`解决
+
+@Resource 默认 `按照实例名称byName方式` 装配。`@Resource(name="xxx",type="xxx") = @Autowired + @Qualifier("")`
+
+
 
 @Resource 中有两个重要属性：name 和 type。
 
-- Spring 将 name 属性解析为 Bean 实例名称，type 属性解析为 Bean 实例类型。即是：如果指定 name 属性，则按实例名称进行装配；如果指定 type 属性，则按 Bean 类型进行装配。
-- 默认按照实例名称装配，如果不能匹配，则再按照 Bean 实例类型进行装配；如果都无法匹配，则抛出 NoSuchBeanDefinitionException 异常。
+- 如果指定 name 属性，则按Bean 实例名称进行装配；如果指定 type 属性，则按 Bean 类型进行装配。
+- 默认按照实例名称装配，如果不能匹配，则再按照 Bean 实例类型进行装配；如果都无法匹配，则抛出 `NoSuchBeanDefinitionException` 异常。
 
-间歇注解：  @Scope("prototype")：定义Bean的作用范围  @Value("")：定义属性值  @PostConstruct和@PreDestroy两个注解相当于bean的init-method和destory-method属性的功能
+
+
+`问题`：@Autowired默认按类型匹配的方式，在容器中查找匹配的Bean，当有且只有一个匹配的Bean时，Spring将其注入到@Autowired注解的变量中。但是如果容器中有超过一个以上的匹配Bean时，例如有两个UserService类型的Bean，这时就不知道将哪个Bean注入到变量中，就会出现异常
+
+为了解决这个问题，Spring可以通过 `@Qualifier`注解来注入指定Bean的 名称。
+
+```java
+public class UserAction {
+     @Autowired 
+     //指定指定Bean的名称
+     @Qualifier("userservice")
+     private UserService userservice;
+ }
+```
+
+还有一种更为便捷的注解方式注入属性@Resource,相当于@Autowired 和@Qualifier一起使用
+
+```java
+@Resource(name="userservice")
+private UserService userservice;
+```
+
+
+
+#### 间歇注解：  
+
+`@Scope("prototype")`：定义Bean的作用范围 
+
+` @Value("")`：定义属性值  
+
+`@PostConstruct`  和 `@PreDestroy` 两个注解相当于bean的init-method和destory-method属性的功能
+
+
 
 #### 属性注入
 
@@ -1619,29 +1745,7 @@ public void  setUserdao(UserDao userdao){
 }
 ```
 
-#### @autowired 与 @resource 
 
-`byName，byType`方式
-
-问题：@Autowired默认按类型匹配的方式，在容器中查找匹配的Bean，当有且只有一个匹配的Bean时，Spring将其注入到@Autowired注解的变量中。但是如果容器中有超过一个以上的匹配Bean时，例如有两个UserService类型的Bean，这时就不知道将哪个Bean注入到变量中，就会出现异常
-
-为了解决这个问题，Spring可以通过@Qualifier注解来注入指定Bean的名称。
-
-```java
-public class UserAction {
-     @Autowired 
-     //指定指定Bean的名称
-     @Qualifier("userservice")
-     private UserService userservice;
- }
-```
-
-还有一种更为便捷的注解方式注入属性@Resource,相当于@Autowired 和@Qualifier一起使用
-
-```java
-@Resource(name="userservice")
-private UserService userservice;
-```
 
 ### Spring 设计模式
 
@@ -1665,7 +1769,7 @@ private UserService userservice;
 
 
 
-## 5.2 SpringMVC
+## 5.2 Spring MVC
 
 ### 工作原理
 
@@ -1762,21 +1866,83 @@ private UserService userservice;
 
 > @PathVariable与@RequestParam
 
+`@PathVariable` 用于将请求URL中的模板变量映射到 功能处理方法的参数上。
+
+如请求的URL为“ /users/123/roles/456”，则自动将URL中模板变量{userId}和{roleId}绑定到通过@PathVariable注解的同名参数上，即入参后userId=123、roleId=456。
+
+```java
+@Controller  
+public class TestController {  
+     @RequestMapping(value="/user/{userId}/roles/{roleId}",method = RequestMethod.GET)  
+     public String getLogin(@PathVariable("userId") String userId,  
+         @PathVariable("roleId") String roleId){  
+         System.out.println("User Id : " + userId);  
+         System.out.println("Role Id : " + roleId);  
+         return "hello";  
+     }  
+     @RequestMapping(value="/product/{productId}",method = RequestMethod.GET)  
+     public String getProduct(@PathVariable("productId") String productId){  
+           System.out.println("Product Id : " + productId);  
+           return "hello";  
+     }  
+     @RequestMapping(value="/javabeat/{regexp1:[a-z-]+}", method = RequestMethod.GET)  
+     public String getRegExp(@PathVariable("regexp1") String regexp1){  
+           System.out.println("URI Part 1 : " + regexp1);  
+           return "hello";  
+     }  
+}
+```
+
+
+
+`@RequestParam`用于将请求参数映射到 功能处理方法的参数上。
+
+```java 
+请求中包含username参数（如/requestparam1?username=zhang），则自动传入。
+public String requestparam1(@RequestParam String username);
+```
+
+@RequestParam有以下三个参数：
+
+- value：参数名字，即入参的请求参数名字，如username表示请求参数中名字为username的参数值将传入；
+
+- required：是否必须，默认是true，表示请求中一定要有相应的参数，否则将抛出异常；
+
+- defaultValue：默认值，表示如果请求中没有同名参数时的默认值；`默认required为false，表示为null`
+
+  - 原子类型：必须有值，否则抛出异常，如果允许空值请使用包装类代替。
+
+  - Boolean包装类型：默认Boolean.FALSE，其他引用类型默认为null。
+
+
+
+如果请求参数中包含多个同名参数，应该如何接收呢？如给用户授权时，可能授予多个权限。
+
+假如请求参数类似于url?role=admin&rule=user，则实际roleList参数入参的数据为“admin,user”，即多个数据之间使用“，”分割；我们应该使用如下方式来接收多个请求参数：
+
+```java
+public String requestparam7(@RequestParam(value="role") String[] roleList)
+或者
+public String requestparam8(@RequestParam(value="list") List<String> list)  
+```
+
 
 
 > @ResponseBody与@RequestBody
 
+消息转换器配置：`Jackson -》 MappingJacksonHttpMessageConverter`
 
+使用地方：都是用于Controller类方法上。
+
+数据格式：Content-Type: application/json, application/xml，不是application/x-www-form-urlencoded编码的内容
+
+@RequestBody 将HTTP请求正文转换为适合的HttpMessageConverter对象。
+
+@ResponseBody 将内容或对象作为 HTTP 响应正文返回，并调用适合HttpMessageConverter的Adapter转换对象，写入输出流
 
 > @Controller与@RestController
 
-
-
-> @Resource、@Qualifier与@Autowired
-
-
-
-
+@RestController注解 等价于 @ResponseBody ＋ @Controller
 
 
 
@@ -1784,81 +1950,9 @@ private UserService userservice;
 
 x 正数的值越小，该servlet的优先级越高，应用启动时就越先加载。当值相同时，容器就会自己选择顺序来加载。
 
-获取请求参数以及参数绑定
+## Spring Security
 
-通过Controller控制器处理方法的形参获取
-
-通过注解获取参数
-
-## 5.3 Spring Boot
-
-### 自动配置原理
-
-@SpringBootApplication -》 @EnableAutoConfiguration，SpringApplication.run(...)的内部就会执行selectImports()方法，找到所有 JavaConfig自动配置类的全限定名对应的class
-
-META-INF/spring.factories
-
-@EnableAutoConfiguration -》xxxxAutoConfiguration
-
-
-
-自动生效
-
-- @ConditionalOnBean：当容器里有指定的bean的条件下。
-- @ConditionalOnMissingBean：当容器里不存在指定bean的条件下。
-- @ConditionalOnClass：当类路径下有指定类的条件下。
-- @ConditionalOnMissingClass：当类路径下不存在指定类的条件下。
-- @ConditionalOnProperty：指定的属性是否有指定的值，比如@ConditionalOnProperties(prefix=”xxx.xxx”, value=”enable”, matchIfMissing=true)，代表当xxx.xxx为enable时条件的布尔值为true，如果没有设置的情况下也为true。
-
-
-
-@EnableConfigurationProperties -》 XXXProperties
-
-
-
-### 配置加载顺序
-
-- 命令行参数。所有的配置都可以在命令行上进行指定；
-- 来自java:comp/env的JNDI属性；
-- Java系统属性（System.getProperties()）；
-- 操作系统环境变量 ；
-- jar包外部的application-{profile}.properties或application.yml(带spring.profile)配置文件
-- jar包内部的application-{profile}.properties或application.yml(带spring.profile)配置文件 再来加载不带profile
-- jar包外部的application.properties或application.yml(不带spring.profile)配置文件
-- jar包内部的application.properties或application.yml(不带spring.profile)配置文件
-- @Configuration注解类上的@PropertySource
-
-根据第7条，我们只要在jar包同目录外放置一个application.properties配置文件，就会起作用，同时这个配置文件的优先级还比jar内的高，这个配置很有作用！！
-
-### YAML 配置
-
-
-
-### 核心配置文件
-
-> Bootstrap.properties 和 application.properties
-
-
-
-### 安全问题
-
-> Spring Security 和 Shiro
-
-
-
-> 跨域CSRF
-
-
-
-### 前后端分离第三方工具Swagger
-
-
-
-## 5.4 Spring Cloud
-
-### 5.4.1 Spring Security
-
-#### 工作原理
+### 工作原理
 
 ​    认证和授权
 
@@ -1896,27 +1990,370 @@ BCrypt加密算法
 
 ​	配置到认证管理器的提供者中加密方式
 
+
+
+## 5.3 Spring Boot
+
+### 5.3.1 配置
+
+#### BootStrap.yaml
+
+```yaml
+server:
+  port: 56050 #启动端口 命令行注入
+  max-http-header-size: 100KB
+
+nacos:
+  server:
+    addr: 127.0.0.1:8848
+
+spring:
+  application:
+    name: transaction-service
+  main:
+    allow-bean-definition-overriding: true # Spring Boot 2.1 需要设定
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${nacos.server.addr}
+        namespace: 611b745b-50b4-492b-8888-536d0b1cc7f7
+        cluster-name: DEFAULT
+      config:
+        server-addr: ${nacos.server.addr} # 配置中心地址
+        file-extension: yaml
+        namespace: 611b745b-50b4-492b-8888-536d0b1cc7f7 # 默认开发环境郑州区 命令行注入
+        group: SHANJUPAY_GROUP # 聚合支付业务组
+        ext-config:
+          -
+            refresh: true
+            data-id: spring-boot-http.yaml # spring boot http配置
+            group: COMMON_GROUP # 通用配置组
+          -
+            refresh: true
+            data-id: spring-boot-starter-druid.yaml # spring boot starter druid配置
+            group: COMMON_GROUP # 通用配置组
+          -
+            refresh: true
+            data-id: spring-boot-mybatis-plus.yaml # spring boot mybatisplus配置
+            group: COMMON_GROUP # 通用配置组
+          -
+            refresh: true
+            data-id: spring-boot-redis.yaml # redis配置
+            group: COMMON_GROUP # 通用配置组
+          -
+            refresh: true
+            data-id: spring-boot-freemarker.yaml # spring boot freemarker配置
+            group: COMMON_GROUP # 通用配置组
+          -
+            refresh: true
+            data-id: spring-boot-starter-rocketmq.yaml # rocketmq配置
+            group: COMMON_GROUP # 通用配置组
+dubbo:
+  scan:
+    # dubbo 服务扫描基准包
+    base-packages: com.shanjupay
+  protocol:
+    # dubbo 协议
+    name: dubbo
+    port: 20893
+  registry:
+    address: nacos://127.0.0.1:8848
+  application:
+    qos:
+      port: 22250 # dubbo qos端口配置  命令行注入
+  consumer:
+    check: false
+    timeout: 3000
+    retries: -1
+
+logging:
+  config: classpath:log4j2.xml
+```
+
+
+
+
+
+#### 自动配置原理
+
+> 详细理解
+
+注解：@SpringBootApplication  -》 @EnableAutoConfiguration -》@Import -》 @ConditionalOnClass-》@Configuration -》@EnableConfigurationProperties 
+
+
+
+@SpringBootApplication -》 @EnableAutoConfiguration，SpringApplication.run(...)的内部就会执行selectImports()方法，找到META-INF/spring.factories文件中所有 JavaConfig自动配置类的全限定名对应的class
+
+@EnableAutoConfiguration -》xxxxAutoConfiguration
+
+然后通过@ConditionalOnClass在指定类中生效。
+
+再结合XXXProperties.java 读取配置文件进行属性装配。
+
+
+
+自动生效
+
+- @ConditionalOnBean：当容器里有指定的bean的条件下。
+- @ConditionalOnMissingBean：当容器里不存在指定bean的条件下。
+- `@ConditionalOnClass：当类路径下有指定类的条件下`。
+- @ConditionalOnMissingClass：当类路径下不存在指定类的条件下。
+- @ConditionalOnProperty：指定的属性是否有指定的值，比如@ConditionalOnProperties(prefix=”xxx.xxx”, value=”enable”, matchIfMissing=true)，代表当xxx.xxx为enable时条件的布尔值为true，如果没有设置的情况下也为true。
+
+@EnableConfigurationProperties -》 XXXProperties
+
+
+
+> 简单理解
+
+注解 @EnableAutoConfiguration, @Configuration, @ConditionalOnClass 就是自动配置的核心，
+
+@EnableAutoConfiguration 给容器导入META-INF/spring.factories 里定义的自动配置类。
+
+筛选有效的自动配置类。
+
+每一个自动配置类结合对应的 xxxProperties.java 读取配置文件进行自动配置功能
+
+
+#### 配置加载顺序
+
+总体上而言，高优先级覆盖低优先级内容，形成互补配置，优先级从高到低加载顺序为：`命令行参数 > 包外配置文件 > 包内配置文件【文件名：application.* > application-default.*】【扩展名：profile > properties > xml > yml > yaml】`
+
+ 
+
+##### 配置文件的加载顺序
+
+`配置文件`默认为application.\*和application-default.\*，`扩展名`有四个：*.properties、*.xml、*.yml、*.yaml；
+
+`执行顺序`就如上出现的顺序一样；如：application.\* 优先于 application-default.\*。*.properties*优先于*.xml*
+
+
+
+Springboot启动会扫描一下位置的application.properties或者application.yml作为默认的配置文件
+
+工程根目录:./config/
+
+工程根目录：./
+
+classpath:/config/
+
+classpath:/
+
+加载的优先级顺序是 `从上向下加载`，并且所有的文件都会被加载，高优先级的内容会 `覆盖底优先级`的内容，形成互补配置
+
+注意⚠️： 工程根路径下或者根路径的 `config 下面的配置文件`，在工程打包时候不会被打包进去
+
+也可以通过指定配置spring.config.location来改变默认配置，一般在项目已经打包后，通过 `命令行指令` 
+java -jar xxxx.jar --spring.config.location=D:/kawa/application.yml 来加载外部的配置
+
+
+
+##### 外部配置的加载顺序
+
+springboot外部配置加载顺序如下，优先级从高到底，并且高优先级的配置覆盖底优先级的配置形成互补配置
+
+> 命令行参数
+
+比如：java -jar xxxx.jar --server.port=8087 --server.context-path=/show 多个配置中间用空格分开
+
+`由jar包外向jar包内进行加载`，比如和工程平级目录下面的配置文件优先级高于jar包内部的配置文件
+
+![image-20211017103655264](https://i.loli.net/2021/10/17/p5oYZmQwaSAji8J.png)
+
+> 优先加载带profile
+
+- jar包外部的application-{profile}.propertie或application.yml(带spring.profile)配置文件 
+
+- jar包内部的application-{profile}.propertie或application.yml(带spring.profile)配置文件
+
+> 再来加载不带profile
+
+- jar包外部的application.propertie或application.yml(不带spring.profile)配置文件
+- jar包内部的application.propertie或application.yml(不带spring.profile)配置文件
+
+
+
+#### YAML 配置
+
+结构化，分层配置数据
+
+> 与properties文件，yaml文件的优势在哪里
+
+- 配置有序
+
+- 支持数组，数组中的元素是基本类型或对象
+
+不支持 `@PropertySource` 注解导入自定义的 YAML 配置。
+
+#### 核心配置文件
+
+> Bootstrap.properties 和 application.properties
+
+- bootstrap (. yml 或者 . properties)：bootstrap 由父 ApplicationContext 加载的，比 applicaton 优先加载，配置在应用程序上下文的引导阶段生效。一般来说我们 在 `Spring Cloud Config` 或者 `Nacos` 中会用到它。且 boostrap 里面的属性不能被覆盖(`属性不可重写`)；
+- application (. yml 或者 . properties)： 由ApplicatonContext 加载，用于 `Spring Boot` 项目的自动化配置。
+
+> 如何在自定义端口上运行 Spring Boot 应用程序？
+
+为了在自定义端口上运行 Spring Boot 应用程序，在application.properties 中指定端口。server.port = 8090
+
+
+
+### 5.3.2 安全问题
+
+#### 比较一下 Spring Security 和 Shiro 各自的优缺点 ?
+由于 Spring Boot 官方提供了大量的非常方便的开箱即用的 Starter ，包括 Spring Security 的 Starter ，使得在 Spring Boot 中使用 Spring Security 变得更加容易，甚至只需要添加一个依赖就可以保护所有的接口，所以，如果是 Spring Boot 项目，一般选择 Spring Security 。当然这只是一个建议的组合，单纯从技术上来说，无论怎么组合，都是没有问题的。Shiro 和 Spring Security 相比，主要有如下一些特点：
+
+- Spring Security 是一个重量级的安全管理框架；Shiro 则是一个轻量级的安全管理框架
+
+- Spring Security 概念复杂，配置繁琐；Shiro 概念简单、配置简单
+
+- Spring Security 功能强大；Shiro 功能简单
+  
+
+#### Spring Boot 中如何解决跨域问题 ?
+
+跨域可以在前端通过  `JSONP` 来解决，但是  JSONP 只可以发送 `GET` 请求，无法发送其他类型的请求，在 RESTful 风格的应用中，就显得非常鸡肋，因此我们推荐在 `后端通过 （CORS，Cross-origin resource sharing） 来解决跨域问题`。这种解决方案并非 Spring Boot 特有的，在传统的 SSM 框架中，就可以通过 CORS 来解决跨域问题，只不过之前我们是在 XML 文件中配置 CORS ，现在可以通过实现 `WebMvcConfigurer`接口，然后重写`addCorsMappings` 方法解决跨域问题。
+
+```java
+@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("*")
+                .allowCredentials(true)
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .maxAge(3600);
+    }
+}
+
+```
+
+
+
+项目中前后端分离部署，所以需要解决跨域的问题。
+
+我们使用cookie存放用户登录的信息，在spring拦截器进行权限控制，当权限不符合时，直接返回给用户固定的json结果。
+
+当用户登录以后，正常使用；当用户退出登录状态时或者token过期时，由于拦截器和跨域的顺序有问题，出现了跨域的现象。
+
+我们知道一个http请求，`先走filter，到达servlet后才进行拦截器的处理`，如果我们 `把cors放在filter里`，就可以优先于权限拦截器执行。
+
+```java
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.addAllowedOrigin("*");
+        corsConfiguration.addAllowedHeader("*");
+        corsConfiguration.addAllowedMethod("*");
+        corsConfiguration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = 
+            new UrlBasedCorsConfigurationSource();
+        urlBasedCorsConfigurationSource.
+            registerCorsConfiguration("/**", corsConfiguration);
+        return new CorsFilter(urlBasedCorsConfigurationSource);
+    }
+}
+```
+
+#### 什么是 CSRF 攻击？
+
+CSRF 代表跨站请求伪造。这是一种攻击，迫使最终用户在当前通过身份验证的Web 应用程序上执行不需要的操作。CSRF 攻击专门针对状态改变请求，而不是数据窃取，因为攻击者无法查看对伪造请求的响应。
+
+
+
+### 5.3.3 整合第三方项目
+
+#### 前后端分离第三方工具Swagger
+
+[详情参考Swagger](/03框架/Swagger)
+
+Swagger 广泛用于可视化 API，使用 Swagger UI 为前端开发人员提供在线沙箱。Swagger 是用于 `生成 RESTful Web 服务的可视化表示的工具，规范和完整框架实现`。它使文档能够以与服务器相同的速度更新。当通过 Swagger 正确定义时，消费者可以使用最少量的实现逻辑来理解远程服务并与其进行交互。因此，Swagger消除了调用服务时的猜测。
+
+
+### 5.3.4 其他
+
+#### 如何使用 Spring Boot 实现异常处理？
+
+ControllerAdvice和ExceptionHandler注解实现全局异常处理
+
+[详情参考](/07项目开发/微服务开发框架?id=系统的异常是怎么处理的)
+
+
+
+## 5.4 Spring Cloud
+
+[Spring Cloud讲解](https://www.cnblogs.com/qdhxhz/category/1558221.html)
+
+
+
+### 5.4.2 Spring Cloud Gateway
+
+Spring Cloud Gateway是Spring Cloud官方推出的第二代网关框架，取代Zuul网关。网关作为流量的，在微服务系统中有着非常作用，网关常见的功能有路由转发、权限校验、限流控制等作用。
+
+### 5.4.3 Spring Cloud OpenFeign
+
+基于Ribbon和Hystrix的声明式服务调用组件，可以动态创建基于Spring MVC注解的接口实现用于服务调用，在Spring Cloud 2.0中已经取代Feign成为了一等公民。
+
+
+
+### Spring Cloud和SpringBoot版本对应关系
+
+| Spring Cloud Version | SpringBoot Version |
+| -------------------- | ------------------ |
+| Hoxton               | 2.2.x              |
+| Greenwich            | 2.1.x              |
+| Finchley             | 2.0.x              |
+| Edgware              | 1.5.x              |
+| Dalston              | 1.5.x              |
+
+
+
 ## 5.5 Spring Cloud Alibaba
 
-### 注册中心和配置中心(Nacos)
+[参考Spring Cloud Alibaba 栏目](https://www.cnblogs.com/qdhxhz/category/1952067.html)
+
+
+
+![img](https://i.loli.net/2021/10/17/sfLeJu4yK9PA2TS.jpg)
+
+
+
+![img](https://i.loli.net/2021/10/17/Xgc46o3KtUOpRxG.jpg)
+
+
+
+### 服务注册与发现和配置中心(Nacos)
+
+[详见项目解析]()
 
 ### 分布式服务框架(Dubbo)
 
+
+
 ### 消息队列(RocketMQ)
+
+分布式消息系统，基于高可用分布式集群技术，提供低延时的、高可靠的消息发布与订阅服务。
 
 ### 分布式解决方案(Seata)
 
+
+
 ### 断路器(Sentinel)
 
-
+`Sentinel`：面向分布式服务架构的轻量级流量控制产品，主要以流量为切入点，从流量控制、熔断降级、系统负载保护等多个维度来帮助您保护服务的稳定性。
 
 ## 5.6 Spring Cloud Netflix
 
-### 服务发现(Eureka)
+### 服务注册发现(Eureka)
 
 ### 断路器(Hystrix)
 
-### 智能路由(Zuul)
+### Api网关(Zuul)
 
 ### 客户端负载均衡(Ribbon-Feign)
 

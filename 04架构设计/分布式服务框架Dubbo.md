@@ -94,13 +94,13 @@ Consumer 端在发起调用之前会先走 filter 链；provider 端在接收到
 
 1、MonitorFilter 向 DubboMonitor 发送数据
 
-2、DubboMonitor 将数据进行聚合后（默认聚合 1min 中的统计数据）暂存到ConcurrentMap<Statistics, AtomicReference> statisticsMap，然后使用一个含有 3 个线程（线程名字：DubboMonitorSendTimer）的线程池每隔 1min ，调用 SimpleMonitorService 遍历发送 statisticsMap 中的统计数据，每发送完毕一个，就重置当前的 Statistics 的 AtomicReference
+2、DubboMonitor 将数据进行聚合后（默认聚合 1min 的统计数据）暂存到ConcurrentMap<Statistics, AtomicReference> statisticsMap，然后使用一个含有 3 个线程（线程名字：DubboMonitorSendTimer）的线程池每隔 1min ，调用 SimpleMonitorService 遍历发送 statisticsMap 中的统计数据，每发送完毕一个，就重置当前的 Statistics 的 AtomicReference
 
-3、SimpleMonitorService 将这些聚合数据塞入 BlockingQueue queue 中（队列大写为 100000）
+3、SimpleMonitorService 将这些聚合数据塞入 BlockingQueue queue 中（队列大小为 100000）
 
 4、SimpleMonitorService 使用一个后台线程（线程名为：DubboMonitorAsyncWriteLogThread）将 queue 中的数据写入文件（该线程以死循环的形式来写）
 
-5、SimpleMonitorService 还会使用一个含有 1 个线程（线程名字：DubboMonitorTimer）的线程池每隔 5min 钟，将文件中的统计数据画成图表
+5、SimpleMonitorService 还会使用一个含有 1 个线程（线程名字：DubboMonitorTimer）的线程池每隔 5min ，将文件中的统计数据画成图表
 
 # 3. 分布式框架
 
@@ -139,7 +139,7 @@ Dubbox 是继 Dubbo 停止维护后，当当网基于 Dubbo 做的一个扩展�
 
 ### 4.2 Dubbo如何保证服务的安全
 
-通过令牌验证在注册中心控制权限，可以在配置文件中决定要不要下发令牌给消费者，可以防止消费者绕过注册中心访问提供者，另外注册中心可以灵活改变授权方式，而不需修改或升级提供者
+通过令牌验证在注册中心控制权限，可以在配置文件中决定要不要下发令牌给消费者，可以防止消费者绕过注册中心访问提供者，另外注册中心可以灵活改变授权方式，而不需修改或升级提供者。
 
 # 5. 集群
 
@@ -238,6 +238,19 @@ public class HelloServiceMock implements HelloService {
 
 所谓失败重试就是consumer调用provider（消费方调用服务）失败了，比如抛出异常，此时是可以重试的，或者调用超时了也可以重试。Dubbox默认请求时间是1000ms，请求三次，可以`通过timeout设置超时时间，以及设置retries重试次数`
 
+
+
+### 超时与服务降级
+
+web api 请求产品明细时调用product service，为了查询产品评论product service调用comment service。如果此时由于comment service异常，响应时间增大到10S（远大于上游服务设置的超时时间），会发生超时异常，进而导致整个获取产品明细的接口异常，这也就是平常说的强依赖。这类强依赖是超时不能解决的，解决方案一般是两种：
+
+- 调用comment service时做异常捕获，返回空值或者返回具体的错误码，消费端根据不同的错误码做不同的处理。
+- 调用coment service做服务降级，比如发生异常时返回一个mock的数据,dubbo默认支持mock。
+
+只有通过做异常捕获或者服务降级才能确保某些不重要的依赖出问题时不影响主服务的稳定性。
+
+
+
 # 6. 配置
 
 ## 6.1 Dubbo 配置文件是如何加载到 Spring 中的？
@@ -262,17 +275,49 @@ Spring 容器在启动的时候，会读取到 Spring 默认的一些 schema 以
 
 ## 6.3 Dubbo 超时设置有哪些方式？
 
-Dubbo 超时设置有两种方式：
+可以在消费端和服务端的 `全局、接口、方法 `中设置Dubbo超时时间
 
-- 服务提供者端设置超时时间，在Dubbo的用户文档中，推荐如果能在服务端多配置就尽量多配置，因为服务提供者比消费者更清楚自己提供的服务特性。
+> 消费端consumer
 
-- 服务消费者端设置超时时间，如果在消费者端设置了超时时间，以消费者端为主，即优先级更高。因为服务调用方设置超时时间控制性更灵活。如果消费方超时，服务端线程不会定制，会产生警告。
+- 全局控制
 
-  
+```xml
+<dubbo:consumer timeout="1000"></dubbo:consumer>
+```
+
+- 接口控制
+- 方法控制
+
+> 服务端provider
+
+- 全局控制
+
+```xml
+<dubbo:provider timeout="1000"></dubbo:provider>
+```
+
+- 接口控制
+- 方法控制
+
+可以看到dubbo针对超时做了比较精细化的支持，无论是消费端还是服务端，无论是接口级别还是方法级别都有支持。
+
+
+
+> 超时设置优先级？
+
+客户端方法级>服务端方法级>客户端接口级>服务端接口级>客户端全局>服务端全局
+
+
 
 ## 6.4 服务调用超时会怎么样？
 
 dubbo 在调用服务不成功时，默认是会重试两次。
+
+## 6.5 超时原理
+
+dubbo默认采用了 `netty`做为网络组件，它属于一种`NIO的模式`。消费端发起远程请求后，线程不会阻塞等待服务端的返回，而是马上得到一个 `ResponseFuture`，消费端通过不断的`轮询机制`判断结果是否有返回。因为是通过轮询，轮询有个需要特别注要的就是 `避免死循环`，所以为了解决这个问题就引入了超时机制，只在一定时间范围内做轮询，如果超时时间就返回超时异常。
+
+
 
 # 7. 通信协议与序列化协议
 
@@ -406,7 +451,7 @@ dubbo 服务发布之后，我们可以利用 telnet 命令进行调试、管理
 
 ## 9.4 Dubbo 如何优雅停机？
 
-Dubbo 是通过 JDK 的 ShutdownHook 来完成优雅停机的，所以如果使用kill -9 PID 等强制关闭指令，是不会执行优雅停机的，只有通过 kill PID 时，才会执行。
+Dubbo 是通过 JDK 的 ShutdownHook 来完成优雅停机的，所以如果使用kill -9 PID 等强制关闭指令，是不会执行优雅停机的，只有通过 `kill PID` 时，才会执行。
 
 # 10. SPI（Service Provider Interface服务提供机制）
 
