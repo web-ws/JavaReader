@@ -6,9 +6,51 @@
 
 ## 1.2 类/抽象类/接口
 
-## 1.3 集合
+## 1.3 集合Collection/map
 
-### ArrayList原理和扩容机制
+### 1.3.1 Collection
+
+
+
+#### Set（无序）
+
+Set接口有两个子类：HashSet和TreeSet 。 
+
+HashSet 
+
+特点：不重复、无序。（通过hashMap的Key值保证）
+
+要求：需要为类重写`hashCode()` 和 `equals()`方法。 
+
+TreeSet 
+
+特点：不重复，有序。
+
+要求：需要为类实现 `Comparable`接口，并重写`compareTo()`方法。 重写 `compareTo()` 可以同时完成两份工作：排序和消除重复。
+
+##### HashSet
+
+HashSet借用HashMap的key存储添加的元素，实现元素的`不重复性、无序`。
+
+```java
+	private static final Object PRESENT = new Object();
+	// HashSet构造方法
+    public HashSet() {
+        map = new HashMap<>();
+    }
+	//添加元素
+    public boolean add(E e) {
+        return map.put(e, PRESENT)==null;
+    }
+```
+
+#### SortSet（有序）
+
+####  List
+
+##### LinkedList（待补充）
+
+##### ArrayList原理和扩容机制
 
 > 添加大量数据前，提前扩容
 
@@ -41,7 +83,9 @@
 | 排序方法 | int compareTo(Object o1)                             | int compare(Object o1,Object o2)   |
 | 触发排序 | Collections.sort(List)                               | Collections.sort(List, Comparator) |
 
-### HashMap工作原理和扩容机制
+### 1.3.2 Map
+
+#### HashMap工作原理和扩容机制
 
 > 核心思想（必看HashMap+ConcurrentHashMap+线程安全）
 
@@ -87,7 +131,7 @@
 - 数组的容量总是为2的N次方数，tableSizeFor()
 - 扩容后，低位链表元素的放在原来位置，高位元素位置=原位置+原数组容量。
 
-#### 红黑树
+##### 红黑树
 
 红黑树是解决二叉查找树的顶端优势的解决方案，根据三个原则：`这个树由红色和黑色组成，树的根元素是黑色，不允许相邻节点颜色为红色` ，产生了 `重新着色recolor` 和 `旋转rotation` 策略。
 
@@ -178,7 +222,7 @@
 
       - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
 
-### LinkedList（待补充）
+
 
 
 
@@ -2395,6 +2439,94 @@ selectKey
 
 ## 6.2 消息队列
 
+![0](https://i.loli.net/2021/10/18/2BufmzJs7SW3ZXc.png)
+
+Dledger架构模型
+
+生产者群/消费者群/名称服务器NameServer（存储每个Broker的主题，消息队列）/消息服务器Broker
+
+生产者群从名称服务器中获取主题的路由信息
+
+消费服务器与名称服务器保持心跳连接（10s一次，断开2分钟，认为你以死亡）
+
+
+
+### 常见问题
+
+#### 如何保证消息队列的高可用？
+
+基于RocketMQ实现高可用：
+
+基础组成：生产者群 消费者群 名称服务器NameServer 消息服务器Broker Server组成
+
+首先明白`名称服务器NameServer`独立运行，每台名称服务器都保存着完整的路由信息（Broker节点，Topic信息），保证只有有一台名称服务器可用保证RocketMQ就能正常运行。
+
+其次`消息服务器Broker集群部署架构`，过度过程：多master模式，多master多slaver模式（异步复制，同步双写），`Dledger模式`（单master多slaver组合成一个Group，横向扩容，可以有多个Group，主备自动切换的[选举机制](07项目开发/loser?id=master-salver选举机制)）。
+
+#### 如何保证消息不被重复消费？
+
+结合具体的业务场景来回答消息不被重复消费。
+
+`正常消费`：消费者消费完消息后发送确认消息给消息队列，消息队列知道消息已经被消费，就将该消息从消息队列中删除。（RocketMQ返回一个`CONSUME_SUCCESS`标志表示消息被成功消费）
+
+`异常消费`（网络中断，导致再次消费）：从业务逻辑中确保多次消费的幂等性：数据库唯一主键以及Redis的Set数据结构。从已消费角度考量，存储已经消费过的消息内容到Redis中。
+
+#### 如何保证消息的可靠性？
+
+[详情参考](https://baijiahao.baidu.com/s?id=1690555364749980380&wfr=spider&for=pc)
+
+本文从消息流转的整个过程分析了RocketMQ如何保证消息的可靠性，消息发送通过`不同的重试策略`保证了消息的可靠发送，消息存储通过`不同的刷盘机制以及多副本`来保证消息的可靠存储，消息消费通过`至少消费成功一次以及消费重试机制`来保证消息的可靠消费，RocketMQ在保证消息的可靠性上做到了`全链路闭环`，最大限度的保证了消息不丢失。
+
+
+
+#### 如何保证消息的顺序性？（难，后期整）
+
+[详情参考](https://www.cnblogs.com/hzmark/p/orderly_message.html)
+
+有点难，建议后期再整整。。。
+
+> 如何保证顺序
+
+在MQ的模型中，顺序需要由3个阶段去保障：
+
+1. 消息被发送时保持顺序
+2. 消息被存储时保持和发送的顺序一致
+3. 消息被消费时保持和存储的顺序一致
+
+
+
+#### 如何解决消息队列消息积压的问题？
+
+- `提高消息并行度`：提高单个 Consumer 的消费并行线程，通过修改参数 consumeThreadMin、consumeThreadMax 实现。
+
+- `批量消费方式`：设置 consumer 的 consumeMessageBatchMaxSize 返个参数，默认是 1，即一次只消费一条消息，例如设置为 N，那么每次消费的消息数小于等于 N。
+
+#### 分布式事务
+
+使用RocketMQ事务机制实现分布式事务
+
+[理论分析+实践](https://mp.weixin.qq.com/s?__biz=MzI1MDU1MjkxOQ==&mid=2247486295&idx=1&sn=46496656bf0fd772fb0dcd46efec68b3&chksm=e9813c6fdef6b579518bad8ad593a8f5fca21cc2b6a5a07c9747aa113556c76ca3753548c588&scene=21#wechat_redirect)
+
+
+
+![image-20211018200639892](https://i.loli.net/2021/10/18/u3A18EX5qPlOzCR.png)
+
+创建订单 -》 支付 -》更改订单状态 -》发货
+
+创建半消息成功后，然后创建订单本地事务提交成功，再去commit/rollback，
+
+
+
+事务的状态：提交/回滚/未知。
+
+未知事务状态采用消息回查，定时遍历commitlog预备消息去回查本地事务状态。
+
+超过回查次数，默认回滚。
+
+
+
+
+
 ### RabbitMQ
 
 > 消息持久化，confirm机制，ACK事务机制。
@@ -2430,6 +2562,138 @@ Headers Exchange 头部路由
 是否投递到交换机-ConfirmCallback 交换机是否路由到队列-ReturnCallback
 
 ### RocketMQ
+
+RocketMQ 集群需要如下特性：
+
+- 高可用
+- 高并发
+- 可伸缩
+- 海量消息
+
+#### 命名服务（NameServer）
+
+首先第一步要让 NameServer 高可用，前期规划了三台机器部署 NamseServer 这样可以充分保证可用性，即使两台机器挂掉也能保证集群的正常使用，只要有一个 NamseServer 还在运行，就能保证 RocketMQ 系统的稳定性。
+
+![img](https://i.loli.net/2021/10/18/7l2sc9JizvtIrYH.png)
+
+NameServer 的设计是相互的独立的，任何一台 NameServer 都可以的独立运行，`跟其他机器没有任何通信`。
+每台 NameServer 都会有完整的集群路由信息，包括所有的 Broker 节点的信息，我们的数据信息等等。所以只要任何一台 NamseServer 存活下来，就可以保存 RocketMQ 信息的正常运行，不会出现故障。
+
+#### Broker 集群部署架构
+
+开始部署 RocketMQ 之前，我们也做过一些功课，对现在 RocketMQ 支持的集群方案做了一些整理，目前 RocketMQ 支持的集群部署方案有以下4种：
+
+- `多Master模式`：一个集群无Slave，全是Master，例如2个Master或者3个Master
+- `多Master多Slave模式-异步复制`：每个Master配置一个Slave，有多对Master-Slave，HA采用异步复制方式，主备有短暂消息延迟（毫秒级）
+- `多Master多Slave模式-同步双写`：每个Master配置一个Slave，有多对Master-Slave，HA采用同步双写方式，即只有主备都写成功，才向应用返回成功
+- `Dledger部署`：每个Master配置二个 Slave 组成 Dledger Group，可以有多个 Dledger Group，由 Dledger 实现 Master 选举
+
+##### 多 Master 模式
+
+一个 RocketMQ 集群中所有的节点都是 Master 节点，每个 Master 节点没有 Slave 节点。
+
+![img](https://i.loli.net/2021/10/18/anHeoM6zJXq2pPC.png)
+
+这种模式的优缺点如下：
+
+- 优点：配置简单，单个Master宕机或重启维护对应用无影响，在磁盘配置为RAID10时，即使机器宕机不可恢复情况下，由于RAID10磁盘非常可靠，消息也不会丢（异步刷盘丢失少量消息，同步刷盘一条不丢），性能最高；
+- 缺点：单台机器宕机期间，这台机器上未被消费的消息在机器恢复之前不可订阅，消息实时性会受到影响。
+
+##### 多 Master 多 Salve - 异步复制 模式
+
+每个Master配置一个Slave，有多对Master-Slave，HA采用异步复制方式，主备有短暂消息延迟（毫秒级）
+
+![img](https://i.loli.net/2021/10/18/Jv4cYQ5MBDxwkSh.png)
+
+这种模式的优缺点如下：
+
+- 优点：即使磁盘损坏，消息丢失的非常少，且消息实时性不会受影响，同时Master宕机后，消费者仍然可以从Slave消费，而且此过程对应用透明，不需要人工干预，性能同多Master模式几乎一样；
+- 缺点：Master宕机，磁盘损坏情况下会丢失少量消息。
+
+##### 多 Master 多 Salve - 同步双写 模式
+
+每个Master配置一个Slave，有多对Master-Slave，HA采用同步双写方式，即只有主备都写成功，才向应用返回成功
+
+![img](https://i.loli.net/2021/10/18/iDJwCEZvr5j2MYK.png)
+
+这种模式的优缺点如下：
+
+- 优点：数据与服务都无单点故障，Master宕机情况下，消息无延迟，服务可用性与数据可用性都非常高；
+- 缺点：性能比异步复制模式略低（大约低10%左右），发送单个消息的RT会略高，且目前版本在主节点宕机后，备机不能自动切换为主机。
+
+##### Dledger 模式
+
+RocketMQ 4.5 以前的版本大多都是采用 Master-Slave 架构来部署，能在一定程度上保证数据的不丢失，也能保证一定的可用性。
+
+但是那种方式 的缺陷很明显，`最大的问题就是当 Master Broker 挂了之后 ，没办法让 Slave Broker 自动 切换为新的 Master Broker`，需要手动更改配置将 Slave Broker 设置为 Master Broker，以及重启机器，这个非常麻烦。
+
+在手式运维的期间，可能会导致系统的不可用。
+
+使用 Dledger 技术要求至少由三个 Broker 组成 ，一个 Master 和两个 Slave，这样三个 Broker 就可以组成一个 Group ，也就是三个 Broker 可以分组来运行。一但 Master 宕机，Dledger 就可以从剩下的两个 Broker 中选举一个 Master 继续对外提供服务。
+
+![img](https://i.loli.net/2021/10/18/4M3hC7UmleQDiNp.png)
+
+###### Master-salver选举机制
+
+[详情参考](https://blog.51cto.com/u_15281317/3008330)
+
+> 基本概念
+
+Raft协议
+
+机器状态：Candidate（候选节点）Master（主节点） salver（从节点）
+
+每台机器附带编号和投票数（seriNo，votesNum）；
+
+> 具体过程
+
+`如果三台机器先后启动`，则最先启动的机器成为主节点。
+
+`如果三台机器同时启动`，此时状态为候选节点Candidate，默认给自己投票，一开始大家都有一票。为快速选举出leader，设定随机等待超时时间后重新选举，先结束等待超时时间的机器A，投给自己，此时为2票，其他机器相应起来后，投把票数投给机器A，此时结束选举，机器A成为master，其余机器状态为从节点，主从节点保持心跳连接。
+
+`主节点断开连接后`，主从节点心跳连接不成功，从节点状态变为候选节点Candidate，开始选举机制。
+
+
+
+集群选举
+
+![img](https://i.loli.net/2021/10/18/VfACGxU7K3vdT5b.png)
+
+
+
+心跳机制
+
+![img](https://i.loli.net/2021/10/18/iaM8ZGkfbXH7vWP.png)
+
+
+
+#### 整体架构：高可用、高并发、可伸缩 、海量消息
+
+经过上面4种集群方案的比较，最终确定使用 Dledger 方式最终的逻辑部署图如下：
+
+![img](https://i.loli.net/2021/10/18/2BufmzJs7SW3ZXc.png)
+
+上图的虚线框表示一个 Dledger Group。
+
+> 高可用
+
+三个 NameServer 极端情况下，确保集群的可用性，任何两个 NameServer 挂掉也不会影响信息的整体使用。
+
+在上图中每个 Master Broker 都有两个 Slave Broker，这样可以保证可用性，如在同一个 Dledger Group 中 Master Broker 宕机后，Dledger 会去行投票将剩下的节点晋升为 Master Broker。
+
+> 高并发
+
+假设某个Topic的每秒十万消息的写入， 可以增加 Master Broker 然后十万消息的写入会分别分配到不同的 Master Broker ，如有5台 Master Broker 那每个 Broker 就会承载2万的消息写入。
+
+> 可伸缩
+
+如果消息数量增大，需要存储更多的数量和最高的并发，完全可以增加 Broker ，这样可以线性扩展集群。
+
+> 海量消息
+
+数据都是分布式存储的，每个Topic的数据都会分布在不同的 Broker 中，如果需要存储更多的数据，只需要增加 Master Broker 就可以了。
+
+
 
 
 
