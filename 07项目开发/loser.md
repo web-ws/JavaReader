@@ -48,7 +48,48 @@ HashSet借用HashMap的key存储添加的元素，实现元素的`不重复性�
 
 ####  List
 
-##### LinkedList（待补充）
+List 接口直接继承 Collection 接口，它定义为可以存储重复元素的集合，并且元素按照插入顺序有序排列，且可以通过索引访问指定位置的元素。常见的实现有：ArrayList、LinkedList、Vector 和 Stack。
+
+##### LinkedList
+
+`非线程安全`，采用以下方法变成线程安全：
+
+```java
+List list=Collections.synchronizedList(new LinkedList(...));
+```
+
+- linkedList为双链表，通过size，两个指针：first和last指针，每个节点有item自身、前驱prev和后驱next两个节点来维护双链表的关系。
+
+- 添加元素 `add(E e) -> linkLast(Node<E> e)`，首先创建新的节点，然后通过尾节点判断它是新链表（first指向它）还是有数据链表（last.next 指向它）
+
+- 删除元素`remove(int index) -> unlink(Node<E> e)`，获取节点元素本身，前驱节点，后驱节点；判断前驱节点是否为空，后驱节点是否为空，分别置空。最后把删除节点的本身置空null，尺寸size--， modCount--；
+
+
+
+查找某个位置节点的值，二分查找法
+
+```java
+
+    /**
+     * Returns the (non-null) Node at the specified element index.
+     */
+	// 返回指定index位置的节点
+    Node<E> node(int index) {
+        // assert isElementIndex(index);
+		// 首先去比较index和size >> 1（也就是size的一半），如果比中间数小则从链表头找，否则从尾找
+        if (index < (size >> 1)) {
+            Node<E> x = first;
+            for (int i = 0; i < index; i++)
+                x = x.next;
+            return x;
+        } else {
+            Node<E> x = last;
+            for (int i = size - 1; i > index; i--)
+                x = x.prev;
+            return x;
+        }
+    }
+```
 
 ##### ArrayList原理和扩容机制
 
@@ -82,6 +123,18 @@ HashSet借用HashMap的key存储添加的元素，实现元素的`不重复性�
 | 实现     | 实现Comparable接口                                   | 实现Comparator接口                 |
 | 排序方法 | int compareTo(Object o1)                             | int compare(Object o1,Object o2)   |
 | 触发排序 | Collections.sort(List)                               | Collections.sort(List, Comparator) |
+
+##### 什么场景下更适宜使用LinkedList，而不用ArrayList
+
+我前面已经提到，很多场景下ArrayList更受欢迎，但是还有些情况下LinkedList更为合适。譬如：
+
+- 你的应用不会随机访问数据。因为如果你需要LinkedList中的第n个元素的时候，你需要从第一个元素顺序数到第n个数据，然后读取数据。
+
+- 你的应用更多的插入和删除元素，更少的读取数据。因为插入和删除元素不涉及重排数据，所以它要比ArrayList要快。
+
+以上就是关于ArrayList和LinkedList的差别。你需要一个不同步的基于索引的数据访问时，请尽量使用ArrayList。ArrayList很快，也很容易使用。但是要记得要给定一个合适的初始大小，尽可能的减少更改数组的大小。
+
+综合来说，在需要频繁读取集合中的元素时，更推荐使用 ArrayList，而在插入和删除操作较多时，更推荐使用 LinkedList。
 
 ### 1.3.2 Map
 
@@ -2161,36 +2214,37 @@ logging:
 
 #### 配置加载顺序
 
-总体上而言，高优先级覆盖低优先级内容，形成互补配置，优先级从高到低加载顺序为：`命令行参数 > 包外配置文件 > 包内配置文件【文件名：application.* > application-default.*】【扩展名：profile > properties > xml > yml > yaml】`
+总体上而言，高优先级覆盖低优先级内容，形成互补配置，优先级从高到低加载顺序为：`命令行参数 > 包外配置文件 > 包内配置文件;再看文件名和扩展名的加载顺序【文件名：application.* > application-default.*】【扩展名：properties > xml > yml > yaml】`
 
  
 
 ##### 配置文件的加载顺序
 
-`配置文件`默认为application.\*和application-default.\*，`扩展名`有四个：*.properties、*.xml、*.yml、*.yaml；
+`配置文件`默认为application.\*和application-default.\*，`扩展名`有四个：*.properties > *.xml > *.yml > *.yaml；
 
-`执行顺序`就如上出现的顺序一样；如：application.\* 优先于 application-default.\*。*.properties*优先于*.xml*
+`执行顺序`就如上出现的顺序一样；如：application.\* 优先于 application-default.\*。
 
 
 
 Springboot启动会扫描一下位置的application.properties或者application.yml作为默认的配置文件
 
-工程根目录:./config/
+工程根目录：./config/
 
 工程根目录：./
 
-classpath:/config/
+类路径目录classpath：/config/
 
-classpath:/
+类路径目录classpath：./
 
 加载的优先级顺序是 `从上向下加载`，并且所有的文件都会被加载，高优先级的内容会 `覆盖底优先级`的内容，形成互补配置
 
 注意⚠️： 工程根路径下或者根路径的 `config 下面的配置文件`，在工程打包时候不会被打包进去
 
-也可以通过指定配置spring.config.location来改变默认配置，一般在项目已经打包后，通过 `命令行指令` 
-java -jar xxxx.jar --spring.config.location=D:/kawa/application.yml 来加载外部的配置
+也可以通过指定配置spring.config.location来改变默认配置，一般在项目已经打包后，通过 `命令行指令` 来加载外部的配置
 
-
+```shell
+java -jar xxxx.jar --spring.config.location=D:/kawa/application.yml 
+```
 
 ##### 外部配置的加载顺序
 
@@ -2359,7 +2413,9 @@ Spring Cloud Gateway是Spring Cloud官方推出的第二代网关框架，取代
 
 ## 5.5 Spring Cloud Alibaba
 
-[参考Spring Cloud Alibaba 栏目](https://www.cnblogs.com/qdhxhz/category/1952067.html)
+参考学习栏目：
+
+- [雨点的名字-分布式Spring Cloud Alibaba](https://www.cnblogs.com/qdhxhz/category/1952067.html)
 
 
 
@@ -2387,9 +2443,49 @@ Spring Cloud Gateway是Spring Cloud官方推出的第二代网关框架，取代
 
 
 
-### 断路器(Sentinel)
+### 哨兵(Sentinel)
 
-`Sentinel`：面向分布式服务架构的轻量级流量控制产品，主要以流量为切入点，从流量控制、熔断降级、系统负载保护等多个维度来帮助您保护服务的稳定性。
+> 核心思想
+
+流量控制：限流，削峰填谷
+
+熔断控制：XXX服务不可以时，采用降级方式让其通过，不影响整个提交订单业务
+
+系统保护：当系统负载比较高的时候，在集群环境下，会把本应这台机器承载的流量转发到其它的机器上去。如果这个时候其它的机器也处在一个边缘状态的时候，Sentinel 提供了对应的保护机制，
+
+> 重要概念：资源和规则
+
+`资源`是 Sentinel 的关键概念。它可以是 Java 应用程序中的任何内容，例如，由应用程序提供的服务，或由应用程序调用的其它应用提供的服务，甚至可以是一段代码。在接下来的文档中，我们都会用资源来描述代码块。 只要通过 Sentinel API 定义的代码，就是资源，能够被 Sentinel 保护起来。大部分情况下，可以使用方法签名，URL，甚至服务名称作为资源名来标示资源。
+
+围绕资源的实时状态设定的`规则`，可以包括流量控制规则、熔断降级规则以及系统保护规则。所有规则可以动态实时调整。
+
+
+
+通过Sentinel控制台对资源进行管理和控制。
+
+![img](https://i.loli.net/2021/10/19/2nckHpWyZzJaXYr.jpg)
+
+
+
+![img](https://i.loli.net/2021/10/19/noSbcYwCsX9MWp6.jpg)
+
+
+
+[参考详情](https://www.cnblogs.com/qdhxhz/p/14718138.html)》
+
+`Sentinel`：面向分布式服务架构的轻量级流量控制产品，主要以流量为切入点，从`流量控制、熔断降级、系统负载保护`等多个维度来帮助您保护服务的稳定性。
+
+![img](https://i.loli.net/2021/10/19/oyIqScxVbmuAMPO.jpg)
+
+从图中可以看出Sentinel相比于Hystrix功能更强大。
+
+Hystrix 的关注点在于以隔离和熔断为主的容错机制，超时或被熔断的调用将会快速失败，并可以提供 fallback 机制。
+
+而 Sentinel 的侧重更多 包括：多样化的流量控制、熔断降级、系统负载保护、实时监控和控制台。而对于熔断本身而言 Hystrix只支持基于失败比例熔断，而Sentinel除了支持基于失败比例熔断，还支持超时熔断。
+
+
+
+
 
 ## 5.6 Spring Cloud Netflix
 
@@ -2399,9 +2495,104 @@ Spring Cloud Gateway是Spring Cloud官方推出的第二代网关框架，取代
 
 ### Api网关(Zuul)
 
-### 客户端负载均衡(Ribbon-Feign)
+### 服务调用(Feign)
 
-### 服务之间的调用（RESTFUL）
+`简化说明`：服务与服务之间的调用方式采用Feign，融合了Ribbon的负载均衡Ribbon和Rest调用。让服务与服务之间的调用更加简便。引入openfeign依赖 -> 启动类@EnableFeignClient -> 调用接口@FeignClient/@GetMapping 
+
+
+
+参考文章:
+
+- [Spring Cloud Alibaba(8)---Feign服务调用](https://www.cnblogs.com/qdhxhz/p/14659744.html)
+
+
+
+> 什么是Feign
+
+Feign是由Netflix开发出来的另外一种实现负载均衡的开源框架，它封装了Ribbon和RestTemplate，实现了WebService的 `面向接口编程`，进一步的减低了项目的耦合度，因为它封装了Riboon和RestTemplate，所以它具有这两种框架的功能，可以 `实现负载均衡和Rest调用`。
+
+> 为什么需要Feign
+
+feign解决两个服务请求之前需要配置请求head、body，然后才能发起请求。feign正是为了解决这个而产生的，简化RestTemplate调用流程，真正感觉到是在同一个项目中调用另一个类的方法的欢快感。
+
+
+
+订单服务调用商品服务，
+
+引入的依赖包是openfeigin
+
+开启Feign支持@EnableFeignClients
+
+> 接口编程实现RestTemplate调用
+
+在接口中编写调用的服务名称 @FeignClient(value = "mall-goods") ，以及和指定映射请求。
+
+> 负载均衡策略
+
+随机策略、轮询策略、重试策略、最小并发策略、可用过滤策略、响应时间加权重策略、区域权重策略
+
+![img](https://i.loli.net/2021/10/19/inTsoOIcUWkSCBV.jpg)
+
+
+
+
+
+```java
+/**
+ * mall-good s就是商品微服务的 spring.application.name
+ */
+@FeignClient(value = "mall-goods")
+public interface GoodsService {
+   
+    /**
+     * /api/v1/goods/findByGoodsId就是商品服务提供的接口，参数也是
+     */
+    @GetMapping("/api/v1/goods/findByGoodsId")
+    Goods findById(@RequestParam("goodsId") int goodsId);
+}
+```
+
+
+
+
+
+引入依赖
+
+```xml
+<!--引入feign-->
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
+
+
+
+
+
+> Feign优点
+
+ 1、Feign旨在使编程java Http客户端变得更容易。
+
+ 2、服务调用的时候融合了 Ribbon 技术，所以也支持负载均衡作用。
+
+ 3、服务调用的时候融合了 Hystrix 技术，所以也支持熔断机制作用。
+
+
+
+## Spring Cloud GateWay
+
+[参考详情](https://www.cnblogs.com/qdhxhz/p/14766527.html)
+
+
+
+![img](https://i.loli.net/2021/10/19/5gZdSy8ui7PpE4J.jpg)
+
+
+
+
+
+
 
 
 
@@ -2417,17 +2608,109 @@ Spring Cloud Gateway是Spring Cloud官方推出的第二代网关框架，取代
 
 
 
+​    ![0](https://i.loli.net/2021/10/19/iyn3YSbBcjK4mtz.png)
+
+图 2 MyBatis 框架的执行流程图
+
+> 简化过程
+
+读取全局配置文件，加载Mapper映射文件，构造会话工厂，创建会话，调用执行器操作数据库，映射输入参数和输出参数。
+
+> 详细过程
+
+下面对图 2 中的每步流程进行说明：
+
+1）`读取全局配置文件mybatis-config.xml`：此文件配置了 MyBatis 的运行环境等信息，例如数据库连接信息。
+
+2）`加载Mapper映射文件`。该文件中配置了操作数据库的 SQL 语句，需要在 MyBatis 配置文件 mybatis-config.xml 中加载。配置文件可以加载多个映射文件，每个文件对应数据库中的一张表。
+
+3）`构造SqlSessionFactory会话工厂`：通过 MyBatis 的环境等配置信息构建会话工厂 SqlSessionFactory。
+
+4）`创建SqlSession 会话对象：`由会话工厂创建 SqlSession 对象，该对象中包含了执行 SQL 语句的所有方法。
+
+5）`Executor 执行器：`MyBatis 底层定义了一个 Executor 接口来操作数据库，它将根据 SqlSession 传递的参数动态地生成需要执行的 SQL 语句，同时负责查询缓存的维护。
+
+6）`MappedStatement 对象：`在 Executor 接口的执行方法中有一个 MappedStatement 类型的参数，该参数是对映射信息的封装，用于存储要映射的 SQL 语句的 id、参数等信息。
+
+7）`输入参数映射：`输入参数类型： Map、List 等集合类型，引用数据类型和 POJO 类型。输入参数映射过程类似于 JDBC 对 preparedStatement 对象设置参数的过程。
+
+8）`输出结果映射：`输出结果类型： Map、 List 等集合类型，引用数据类型和 POJO 类型。输出结果映射过程类似于 JDBC 对结果集的解析过程。
+
 #### 核心组件
 
+MyBatis 的核心组件分为 4 个部分。 
+
+1）SqlSessionFactoryBuilder（构造器）：它会根据配置或者代码来生成 SqlSessionFactory，采用的是分步构建的 Builder 模式。
+
+2）SqlSessionFactory（工厂接口）：依靠它来生成 SqlSession，使用的是工厂模式。
+
+3）SqlSession（会话）：一个既可以发送 SQL 执行返回结果，也可以获取 Mapper 的接口。
+
+4）SQL Mapper 接口（映射器）：MyBatis 新设计存在的组件，它由一个 Java 接口和 XML 文件（或注解）构成，需要给出对应的 SQL 和映射规则。它负责发送 SQL 去执行，并返回结果。
 
 
-### {}和${}的区别
+
+#### {}和${}的区别
 
 #{}：POJO的属性或者变量，预编译，防止SQL注入的； 
 
 ${}：POJO属性或者变量，拼接字符串
 
-### mybatis递归查找
+#### 标签
+
+1. 定义SQL语句
+
+  1.1 select 标签的使用
+
+  1.2 insert 标签的使用
+
+  1.3 delete 标签的使用
+
+  1.4 update 标签的使用
+
+2. 配置对象属性与查询结果集
+
+  2.1 resultMap 标签的使用
+
+3. 动态拼接SQL
+
+  3.1 if 标签的使用
+
+  3.2 foreach 标签的使用
+
+  3.3 choose 标签的使用
+
+4. 格式化输出
+
+  4.1 where
+
+  4.2 set
+
+  4.3 trim
+
+5. 配置关联关系
+
+  5.1 association一对一
+
+  ​	5.1.1 初步了解
+
+  ​	5.1.2 补充内容：
+
+  ​		方法一：使用resultType
+
+  ​	    方法二：使用	resultMap
+
+  5.2 collection 一对多
+
+  ​	5.2.1 一对多的关系
+
+  ​	5.2.3 多级菜单数据查询
+
+  ​	5.2.3 多级菜单实现（通过Java递归调用）`递归查询`
+
+6. 定义和引用常量
+
+
 
 ### 未提问内容
 
@@ -2723,37 +3006,450 @@ Raft协议
 
 ## 7.1 计算机网络体系结构：OSI/TCP/IP
 
+核心思想：OSI体系结构（应用层/（表示层/会话层）/运输层/网络层/数据链路层/物理层）
+
+​    ![0](https://i.loli.net/2021/10/19/1nYuFKCg2MEoGXL.png)
+
+- 应⽤层(application-layer）的任务是通过应⽤进程间的交互来完成特定⽹络应⽤。支持的协议：域名系统`DNS`，⽀持万维⽹应⽤的`HTTP`协议，⽀持电⼦邮件的 `SMTP`协议
+
+- 运输层(transport layer)的主要任务就是负责向两台主机进程之间的通信提供通⽤的数据传输服务。支持协议：传输控制协议 `TCP`（Transmission Control Protocol） 提供⾯向连接的， 可靠的数据传输服务。⽤户数据协议 `UDP`（User Datagram Protocol） ，提供⽆连接的，尽最⼤努⼒的数据传输服务（不保证数据传输的可靠性）。
+
+- 网络层：在计算机⽹络中进⾏通信的两个计算机之间可能会经过很多个数据链路，也可能还要经过很多通信⼦⽹。⽹络层的任务就是选择合适的⽹间路由和交换结点， 确保数据及时传送。 在发送数据时，⽹络层把运输层产⽣的报⽂段或⽤户数据报封装成分组和包进⾏传送。`IP协议`
+
+- 数据链路层：两台主机之间的数据传输，总是在⼀段⼀段的链路上传送的，这就需要使⽤专⻔的链路层的协议。在两个相邻节点之间传送数据时， 数据链路层将⽹络层交下来的 IP 数据报组装成帧，在两个相邻节点间的链路上传送帧。每⼀帧包括数据和必要的控制信息（如同步信息，地址信息，差错控制等）。
+
+- 物理层：在物理层上所传送的数据单位是⽐特。物理层(physical layer)的作⽤是实现相邻计算机节点之间⽐特流的透明传送，尽可能屏蔽掉具体传输介质和物理设备的差异。
+
 
 
 ## 7.2 TCP三次握手和四次挥手
 
+[详情参考](https://note.youdao.com/ynoteshare/index.html?id=cdc893b9ee903125e5149a4975e14ecc&type=note&_time=1634624532774)
+
+### TCP头部信息
+
+​    ![0](https://i.loli.net/2021/10/19/6kIK2jacCeJRHQZ.png)
+
+TCP头部信息：源端口 目的端口 序列号seq 确认号ack 标志位（SYN发起/FIN释放/ACK确认/URG-紧急指针/PSH/RST-重置连接） 校验和 紧急指针
+
+`通过 列号seq 确认号ack 标志位（SYN发起/FIN释放/ACK确认/URG-紧急指针/PSH/RST-重置连接）的数值变更表示三次握手和四次挥手的过程。`
+
 ### TCP三次握手
+
+​    ![0](https://note.youdao.com/yws/public/resource/cdc893b9ee903125e5149a4975e14ecc/xmlnote/33E7849E24A943BE93C98FA1C31745CC/30663)
+
+客户端：CLOSED -> SYN-SENT -> ESTABLISHED
+
+服务端：CLOSED -> LISTEN -> SY-RCVD -> ESTABLISHED
+
+`参数变化看上图`
+
+简单理解：发起连接，双方互相确认链路互通性，如果没问题，再建立连接。
+
+技术实现（TCP报文）：标志位 [ SYN/ACK ]，确认号Ack，序号Seq
+
+​    ![0](https://i.loli.net/2021/10/19/4w2Wr19MkUAJIGo.gif)
+
+
 
 ### TCP四次挥手
 
-标识：
+​    ![0](https://i.loli.net/2021/10/19/LqziV5nTIU9CrMB.png)
 
-头部信息：源端口 目的端口 序列号 确认号 标志位 校验和 紧急指针
+客户端：ESTABLISHED -> FIN-WAIT-1 -> FIN-WAIT-2 -> TIME-WAIT -> CLOSED
 
-标志位：SYN FIN ACK
+服务端：ESTABLISHED -> CLOSE-WAIT -> LAST-ACK -> CLOSED
 
-序列号 确认号
+`参数变化看上图`
 
-TIME_WAIT（确认服务端已经收到最后发出的确认信息） LAST_WAIT（确认客户端发过来的内容）
+简单理解：释放连接，双方互相确认释放连接的准确性，如果没问题，彼此同意释放连接。
 
-整个过程的头部信息的变化
+技术实现（TCP报文）：
 
-## 7.3 HTTP与HTTPS的区别
+`前"两次挥手"`既让服务器端知道了客户端想要释放连接，也让客户端知道服务器端明白自己想要释放连接的请求。由此确认`关闭客户端到服务器端方向的连接`
 
-安全性和资源消耗SSL（加密算法对称和非对称）/TLS 端口
+`后“两次挥手”`既让客户端知道了服务器端准备好释放连接了，也让服务器端知道客户端明白自己准备好释放连接了。由此确认`关闭服务器端到客户端方向的连接`。
 
-## 7.4 浏览器输入url后的处理
+由此完成“四次挥手”。
+
+​    ![0](https://note.youdao.com/yws/public/resource/cdc893b9ee903125e5149a4975e14ecc/xmlnote/D1E8819AD6FE4D5D8656317E7E9A026D/30669)
+
+
+
+TIME_WAIT：为的是确认服务器端是否收到客户端发出的ACK确认报文，如果服务端在2MSL计时，没有收到ACK确认报文，则会重新发送FIN报文，客户端重新开始2MSL计时。
+
+LAST_WAIT：确认客户端发过来的内容
+
+## 7.3 HTTP与HTTPS
+
+### HTTP协议组成
+
+#### http请求包括:请求行、请求头、请求体
+
+​    ![0](https://i.loli.net/2021/10/19/oHA5krZIR19pKSU.jpg)
+
+> 请求行
+
+结合RESTFUL的架构设计，着重理解：GET/POST/PUT/DELETE请求。
+
+> 请求头
+
+`Referer：`表示这个请求是从哪个url跳过来的,通过百度来搜索淘宝网,那么在进入淘宝网的请求报文中,Referer的值就是:www.baidu.com。如果是直接访问就不会有这个头。
+
+常用于:防盗链。
+
+Referrer Policy: no-referrer-when-downgrade
+
+`Content-Type：`请求的与实体对应的MIME信息。Content-Type: application/x-www-form-urlencoded
+
+`Content-Length：`请求体的长度。
+
+`Host：`请求的服务器主机名。 Host: sczpkj.f3322.net:3000
+
+`Connection：`表示客户端与服务连接类型；Keep-Alive表示持久连接，close已关闭  Connection: keep-alive
+
+`User-Agent：`浏览器通知服务器，客户端浏览器与操作系统相关信息
+
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36
+
+`Cookie：`客户端的Cookie就是通过这个报文头属性传给服务端的哦！Cookie: JSESSIONID=15982C27F7507C7FDAF0F97161F634B5
+
+> 请求体
+
+当请求方式是post的时，请求体会有请求的参数  username=zhangsan&password=123
+
+#### http响应包括:响应行、响应头、响应体
+
+​    ![0](https://i.loli.net/2021/10/19/lo3vCdL9OTDkZ2W.jpg)
+
+> 响应行
+
+`①报文协议及版本；`
+
+例如：HTTP/1.1 200 OK
+
+`②状态码及状态描述；`
+
+状态码：由3位数字组成，第一个数字定义了响应的类别
+
+`1xx：指示信息，表示请求已接收，继续处理`
+
+`2xx：成功，表示请求已被成功接受，处理。`
+
+200 OK：客户端请求成功
+
+204 No Content：无内容。服务器成功处理，但未返回内容。一般用在只是客户端向服务器发送信息，而服务器不用向客户端返回什么信息的情况。不会刷新页面。
+
+206 Partial Content：服务器已经完成了部分GET请求（客户端进行了范围请求）。响应报文中包含Content-Range指定范围的实体内容
+
+`3xx：重定向`
+
+301 Moved Permanently：永久重定向，表示请求的资源已经永久的搬到了其他位置。
+
+302 Found：临时重定向，表示请求的资源临时搬到了其他位置
+
+303 See Other：临时重定向，应使用GET定向获取请求资源。303功能与302一样，区别只是303明确客户端应该使用GET访问
+
+307 Temporary Redirect：临时重定向，和302有着相同含义。POST不会变成GET
+
+304 Not Modified：表示客户端发送附带条件的请求（GET方法请求报文中的IF…）时，条件不满足。返回304时，不包含任何响应主体。虽然304被划分在3XX，但和重定向一毛钱关系都没有
+
+`4xx：客户端错误`
+
+400 Bad Request：客户端请求有语法错误，服务器无法理解。
+
+401 Unauthorized：请求未经授权，这个状态代码必须和WWW-Authenticate报头域一起使用。
+
+403 Forbidden：服务器收到请求，但是拒绝提供服务
+
+404 Not Found：请求资源不存在。比如，输入了错误的url
+
+415 Unsupported media type：不支持的媒体类型
+
+`5xx：服务器端错误，服务器未能实现合法的请求。`
+
+500 Internal Server Error：服务器发生不可预期的错误。
+
+503 Server Unavailable：服务器当前不能处理客户端的请求，一段时间后可能恢复正常，
+
+> 响应头
+
+Server: Apache-Coyote/1.1 
+
+Set-Cookie: JSESSIONID=E1352C5CCEAD7EA9A6F8DA253395781C; Path=/vk 
+
+Content-Type: application/json;charset=UTF-8 
+
+Transfer-Encoding: chunked 
+
+Date: Wed, 26 Sep 2018 03:24:59 GMT              
+
+
+
+> 响应体
+
+现阶段原生form表单提交方式：application/x-www-form-urlencoded /multipart/form-data
+
+新的数据提交方式：application/json 、text/xml
+
+
+
+### HTTP请求和TCP连接
+
+HTTP请求和TCP连接不是一个概念。
+
+HTTP请求通过TCP连接发送到服务器端
+
+HTTP是客户端发起的请求
+
+TCP连接是客户端与服务器端之间通信的桥梁
+
+
+
+### HTTP中的GET和POST请求的区别？
+
+​    ![0](https://i.loli.net/2021/10/19/fcB71gmtDvedkOy.png)
+
+> 精简版
+
+- GET 请求不安全（url暴露信息，只能传输ASCII码），POST请求相对安全（传输信息放在请求体中，urlencode编码）
+
+- GET传输数据量较小（URL限制），POST传输数据量大。
+
+- GET请求市获取数据，POST请求市提交数据，都是TCP连接。
+
+> 复杂版
+
+1. 一般来说GET是获取数据，POST是提交数据的，都是TCP连接。
+
+2. `GET请求不安全，POST请求相对安全`
+
+GET传输数据的时候是在URL地址中的、对所有人都是是可见的、是不安全的、是有浏览器缓存记录的。
+
+GET只能传输`ASCLL字符`，不能进行编码。
+
+POST传输的时候是放在HTTP的请求体之中的，并且是经过`urlencode编码`的所以是相对安全的。
+
+POST是没有对数据类型的限制的，二进制数据也是可以的。
+
+3. HTTP协议并没有对GET和POST的长度做限制，其实是浏览器限制了他们传输大小。
+
+URL地址是有长度限制的，浏览器不同长度限制的具体数值也是不一样的。比如IE是2083字节。需要注意的是这些仅仅是URL地址栏的长度限制。
+
+理论上来说POST的长度是没有限制的，但是受服务器的配置限制或者内存大小的限制，造成了实际开发中POST也是有数据长度的限制的。
+
+4. 为什么说GET比POST更快？
+
+POST和GET请求的过程是不一样的
+
+POST请求的过程：先TCP3次握手，然后服务器返回100continue响应，浏览器再次发送数据，服务器返回200成功响应。
+
+GET请求的过程：先TCP3次握手，浏览器发送数据，然后服务器返回成功响应。
+
+也就是说`POST是要比GET多进行一次数据传输的`，所以GET请求就比POST请求更快。
+
+但是在现在服务器配置较高和网速较快的情况下，这多出来的一次数据传输在实际中并没有什么影响。
+
+5. 是否幂等性
+
+GET是获取数据，所以GET请求是安全且幂等的，是无害的。这个安全指得是对数据不会造成影响。幂等简单的来说就是无论获取多少次数据得到的资源都是一样的。
+
+POST是向服务器传输数据，数据会被重新提交，所以就会有对原有的数据造成伤害。
+
+Form 中的 get 和 post 方法，在数据传输过程中分别对应了 HTTP 协议中的 GET 和 POST 方法。二者主要区别如下：
+
+-  1、Get 是用来从服务器上获得数据，而 Post 是用来向服务器上传递数据。
+-  2、Get 将表单中数据的按照 variable=value 的形式，添加到 action 所指向的 URL 后面，并且两者使用“?”连接，而各个变量之间使用“&”连接；Post 是将表单中的数据放在 form 的数据体中，按照变量和值相对应的方式，传递到 action 所指向 URL。
+-  3、Get 是不安全的，因为在传输过程，数据被放在请求的 URL 中，而如今现有的很多服务器、代理服务器或者用户代理都会将请求URL记录到日志文件中，然后放在某个地方，这样就可能会有一些隐私的信息被第三方看到。另外，用户也可以在浏览器上直接看到提交的数据，一些系统内部消息将会一同显示在用户面前。Post 的所有操作对用户来说都是不可见的。
+-  4、Get 传输的数据量小，这主要是因为受 URL 长度限制；而 Post 可以传输大量的数据，所以在上传文件只能使用 Post（当然还有一个原因，将在后面的提到）。
+-  5、Get 限制 Form 表单的数据集的值必须为 ASCII 字符；而 Post 支持整个 ISO10646 字符集
+
+使用 Post 传输的数据，可以通过设置编码的方式正确转化中文；而 Get 传输的数据却没有变化。
+
+### HTTP与HTTPS的区别？
+
+（1）HTTPS是密文传输，HTTP是明文传输；
+
+（2）默认连接的端口号是不同的，HTTPS是443端口，而HTTP是80端口；
+
+（3）HTTPS请求的过程需要CA证书要验证身份以保证客户端请求到服务器端之后，传回的响应是来自于服务器端，而HTTP则不需要CA证书；
+
+（4）HTTPS=HTTP+加密+认证+完整性保护。
+
+​    ![0](https://i.loli.net/2021/10/19/IYvt75SCurdeqcN.jpg)
+
+#### 加密算法
+
+- 对称加密：加密和解密都是使用的同一个密钥。
+
+例如：数据加密标准（DES）、国际数据加密算法（IDEA）、3DES、Blowfish、RC4、RC5、RC6 和 AES 等
+
+- 非对称加密：加密使用的密钥和解密使用的密钥是不相同的，分别称为：公钥、私钥，公钥和算法都是公开的，私钥是保密的。
+
+例如：RSA、DSA（数字签名用）、ECDSA、 DH、ECDHE
+
+- 哈希Hash算法：将任意长度的信息转换为较短的固定长度的值，通常其长度要比信息小得多，且`算法不可逆`。
+
+例如：MD5、SHA-1、SHA-2、SHA-256、SHA-512等
+
+- 数字签名：签名就是在信息的后面再加上一段内容（信息经过hash后的值），可以证明信息没有被修改过。hash值一般都会加密后（也就是签名）再和信息一起发送，以保证这个hash值不被修改。
+
+
+
+### HTTPS访问过程
+
+HTTPS作为一种安全的应用层协议，它使用了以上三种加密手段：`证书，对称加密和非对称加密`
+
+证公钥的安全性，而是验证正确的交互方。可以使用下图进行说明：
+
+​    ![0](https://i.loli.net/2021/10/19/67PUBezJbiv5rt3.jpg)
+
+> 简化过程
+
+发起请求 -》 回传带公钥的证书 -》 验证证书的有效性 -》 获取公钥 -》 生成客户端私钥 -》 用公钥加密传回服务器 -》 使用会话密钥进行对称加密。
+
+
+
+> 详细过程
+
+上述过程就是两次HTTP请求，其详细过程如下：
+
+1.客户端想服务器发起HTTPS的请求，连接到服务器的443端口；
+
+2.服务器将非对称加密的公钥传递给客户端，以证书的形式回传到客户端
+
+3.服务器接受到该公钥进行验证，就是验证证书，如果有问题，则HTTPS请求无法继续；如果没有问题，则上述公钥是合格的。（第一次HTTP请求）客户端这个时候随机生成一个私钥，成为client key，会话密钥，用于对称加密数据的。使用前面的公钥对client key进行非对称加密；
+
+4.进行二次HTTP请求，将加密之后的client key传递给服务器；
+
+5.服务器使用私钥进行解密，得到client key，使用client key对数据进行对称加密
+
+6.将对称加密的数据传递给客户端，客户端使用非对称解密，得到服务器发送的数据，完成第二次HTTP请求。
+
+服务器发送了一个SSL证书给客户端，SSL 证书中包含的具体内容有：
+
+（1）证书的发布机构CA
+
+（2）证书的有效期
+
+（3）公钥
+
+（4）证书所有者
+
+（5）签名
+
+………
+
+客户端在接受到服务端发来的SSL证书时，会对证书的真伪进行校验，以浏览器为例说明如下：
+
+（1）首先浏览器读取证书中的证书所有者、有效期等信息进行一一校验
+
+（2）浏览器开始查找操作系统中已内置的受信任的证书发布机构CA，与服务器发来的证书中的颁发者CA比对，用于校验证书是否为合法机构颁发 
+
+（3）如果找不到，浏览器就会报错，说明服务器发来的证书是不可信任的。
+
+`（4）如果找到，那么浏览器就会从操作系统中取出  颁发者CA  的公钥，然后对服务器发来的证书里面的签名进行解密`
+
+（5）浏览器使用相同的hash算法计算出服务器发来的证书的hash值，将这个计算的hash值与证书中签名做对比
+
+（6）对比结果一致，则证明服务器发来的证书合法，没有被冒充
+
+（7）此时浏览器就可以读取证书中的公钥，用于后续加密了
+
+
+
+
+
+
+
+### REST风格
+
+​    动词和名词结合
+​    状态码
+​    URL中不能有动词，动词由HTTP的 get、post、put、delete 四种方法来表示。
+​        GET: 获取资源
+​        POST： 新建资源
+​        PUT：在服务器更新资源（向客户端提供改变后的所有资源）
+​        PATCH: 在服务器更新资源（向客户端提供改变的属性），都用PUT
+​        DELETE：删除资源
+​    URL结尾不应该包含斜杠“/”
+
+
+
+### 其他问题
+
+
+
+## 7.4 浏览器中输入URL
+
+[查看详情，请参考](https://note.youdao.com/ynoteshare/index.html?id=92fb6a7d5d2542fb0296f4b8817f0462&type=note&_time=1634634007187)
+
+> 简化过程
+
+`整个过程`：DNS域名解析 （DNS递归查询与迭代查询）-》TCP三次握手建立连接 -》 发起HTTP请求-》 HTTP响应 -》 断开TCP连接 -》 浏览器解析HTML -》 浏览器布局和渲染
+
+`整个过程涉用到的协议`：DNS协议（域名系统） -》 UDP协议（用户数据报协议） -》 HTTP协议（超文本传输协议） -》 TCP协议（传输控制协议） -》 IP协议（互联网协议） -》 ARP协议（地址解析协议）
+
+
+
+客户端与本地域名服务器通信（递归查询），本地域名服务器与外部的域名服务器通信（迭代查询）。
+
+所有网址真正的解析过程为: .（ .（根服务器） -> com.（顶级域名服务器） -> google.com.（主域名服务器） -> www.google.com.
+
+
+
+
+
+浏览器要将URL解析为IP地址，解析域名就要用到`DNS协议`，首先主机会查询DNS的缓存，如果没有就给本地DNS发送查询请求。DNS查询分为两种方式，一种是递归查询，一种是迭代查询。如果是迭代查询，本地的DNS服务器，向根域名服务器发送查询请求，根域名服务器告知该域名的一级域名服务器，然后本地服务器给该一级域名服务器发送查询请求，然后依次类推直到查询到该域名的IP地址。DNS服务器是基于UDP的，因此会用到`UDP协议`。
+
+得到IP地址后，浏览器就要与服务器建立一个http连接，要用到`http协议`。http生成一个get请求报文，将该报文传给TCP层处理，会用到`TCP协议`。如果采用https还会使用https协议先对http数据进行加密。TCP层如果有需要先将HTTP数据包分片，分片依据路径MTU和MSS。TCP的数据包然后会发送给IP层，用到`IP协议`。IP层通过路由选址，发送到目的地址。当然在一个网段内的寻址是通过以太网协议实现(也可以是其他物理层协议，比如PPP，SLIP)，以太网协议需要直到目的IP地址的物理地址，有需要`ARP协议`。
+
+1、DNS协议，http协议，https协议属于应用层
+
+应用层是体系结构中的最高层。应用层确定进程之间通信的性质以满足用户的需要。这里的进程就是指正在运行的程序。应用层不仅要提供应用进程所需要的信息交换和远地操作，而且还要作为互相作用的应用进程的用户代理，来完成一些为进行语义上有意义的信息交换所必须的功能。应用层直接为用户的应用进程提供服务。
+
+2、TCP/UDP属于传输层
+
+传输层的任务就是负责主机中两个进程之间的通信。因特网的传输层可使用两种不同协议：即面向连接的传输控制协议TCP，和无连接的用户数据报协议UDP。面向连接的服务能够提供可靠的交付，但无连接服务则不保证提供可靠的交付，它只是“尽最大努力交付”。这两种服务方式都很有用，备有其优缺点。在分组交换网内的各个交换结点机都没有传输层。
+
+3、IP协议，ARP协议属于网络层
+
+网络层负责为分组交换网上的不同主机提供通信。在发送数据时，网络层将运输层产生的报文段或用户数据报封装成分组或包进行传送。在TCP/IP体系中，分组也叫作IP数据报，或简称为数据报。网络层的另一个任务就是要选择合适的路由，使源主机运输层所传下来的分组能够交付到目的主机。
+
+4、数据链路层
+
+当发送数据时，数据链路层的任务是将在网络层交下来的IP数据报组装成帧，在两个相邻结点间的链路上传送以帧为单位的数据。每一帧包括数据和必要的控制信息（如同步信息、地址信息、差错控制、以及流量控制信息等）。控制信息使接收端能够知道—个帧从哪个比特开始和到哪个比特结束。控制信息还使接收端能够检测到所收到的帧中有无差错。
+
+5、物理层
+
+物理层的任务就是透明地传送比特流。在物理层上所传数据的单位是比特。传递信息所利用的一些物理媒体，如双绞线、同轴电缆、光缆等，并不在物理层之内而是在物理层的下面。因此也有人把物理媒体当做第0层
+
+
+
+
 
 ## 7.5 TCP与UDP协议
 
+- 传输控制协议 TCP（Transmission Control Protocol） 提供⾯向连接的， 保证数据传输的可靠性
+
+- ⽤户数据协议 UDP（User Datagram Protocol） -提供⽆连接的，尽最⼤努⼒的数据传输服务（不保证数据传输的可靠性）。
+
+![image-20211019170718380](https://i.loli.net/2021/10/19/F3dm9v74cfnVTU1.png)
 
 
 
+- UDP 在传送数据之前不需要先建⽴连接，远地主机在收到 UDP 报⽂后，不需要给出任何确认。虽然 UDP 不提供可靠交付，但在某些情况下 UDP 确是⼀种最有效的⼯作⽅式（⼀般⽤于即时通信），⽐如： QQ 语⾳、 QQ 视频 、直播等等TCP 提供⾯向连接的服务。在传送数据之前必须先建⽴连接，数据传送结束后要释放连接。
+
+- TCP 不提供⼴播或多播服务。由于 TCP 要提供可靠的，⾯向连接的传输服务（TCP的可靠体现在TCP在传递数据之前，会有三次握⼿来建⽴连接，⽽且在数据传递时，有确认、窗⼝、重传、拥塞控制机制，在数据传完后，还会断开连接⽤来节约系统资源），这⼀难以避免增加了许多开销，如确认，流量控制，计时器以及连接管理等。这不仅使协议数据单元的⾸部增⼤很多，还要占⽤许多处理机资源。 TCP ⼀般⽤于⽂件传输、发送和接收邮件、远程登录等场景。
+
+## 7.6 线程和进程各自有什么区别和优劣呢？
+1.进程是资源分配的最小单位，线程是程序执行的最小单位。
+
+2.进程有自己的独立地址空间，每启动一个进程，系统就会为它分配地址空间，建立数据表来维护代码段、堆栈段和数据段，这种操作非常昂贵。而线程是共享进程中的数据的，使用相同的地址空间，因此CPU切换一个线程的花费远比进程要小很多，同时创建一个线程的开销也比进程要小很多。
+
+3.线程之间的通信更方便，同一进程下的线程共享全局变量、静态变量等数据，而进程之间的通信需要以通信的方式（IPC)进行。不过如何处理好同步与互斥是编写多线程程序的难点。
+
+4.但是多进程程序更健壮，多线程程序只要有一个线程死掉，整个进程也死掉了，而一个进程死掉并不会对另外一个进程造成影响，因为进程有自己独立的地址空间。
 
 ## 未提问内容
 
@@ -2761,64 +3457,7 @@ TIME_WAIT（确认服务端已经收到最后发出的确认信息） LAST_WAIT�
 
 ## 进程通信
 
-# 10. 算法
-
-## 10.1 数据结构
-
-### 10.1.1 数组（Array）
-
-（静态数组、动态数组）
-
-
-### 10.1.2 栈（Stack）
-
-### 10.1.3 链表（Linked List）
-
-（单向链表、双向链表、循环链表）
-
-### 10.1.4 队列（Queue）
-
-### 10.1.5 树（Tree）
-
-（二叉树、查找树、平衡树（AVL树/红黑树）、B树、B+树）
-
-
-### 10.1.6 散列表（Hash）
-
-### 10.1.7 堆（Heap）
-
-
-### 10.1.8 图（Graph）
-
-
-
-## 10.2 常规算法
-
-### 排序算法
-
-
-
-### 查找算法
-
-
-
-### 回溯算法
-
-
-
-### 动态规划算法
-
-
-
-### 双指针算法
-
-
-
-### 滑动窗口算法
-
-
-
-### 递归算法（二叉树）
+# [10. 数据结构和算法](/05数据结构和算法/数据结构和算法)
 
 
 
@@ -2850,15 +3489,17 @@ AngularJs
 
 ## 项目拆解：优点和难点
 
-### 信用卡资产证券化
+### 资产证券化
 
 #### 项目介绍
 
 整合资产证券化业务流程，构建全流程电子信息化的资产证券化管理系统，涵盖：资产预选、资产备选、资产入库、资产交割、资产回购、资产财务处理、资产报表、服务商报告等功能。
 
+系统间的交互：大数据平台 -》 证券化系统 -》外部系统
 
 
-我主要完成部分流程的功能设计、CRUD工作以及全权负责批处理框架搭建以及存储包数据处理开发。
+
+我主要完成部分流程的功能设计、后台逻辑的编写以及全权负责批处理框架搭建以及存储包数据处理开发。
 
 `功能设计` ：模块切分，流程细分；按系统间
 

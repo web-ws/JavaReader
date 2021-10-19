@@ -48,7 +48,9 @@ Map接口和Collection接口是所有集合框架的父接口：
 Collection接口的子接口包括：Set接口和List接口
 
 Map接口的实现类主要有：HashMap、TreeMap、Hashtable、ConcurrentHashMap以及Properties等
-Set接口的实现类主要有：HashSet、TreeSet、LinkedHashSet等
+
+Set接口的实现类主要有：HashSet（无序）、LinkedHashSet（无序）、TreeSet（有序）等
+
 List接口的实现类主要有：ArrayList、LinkedList、Stack以及Vector等
 
 ## 1.6 List，Set，Map三者的区别？List、Set、Map 是否继承自 Collection 接口？List、Map、Set 三个接口存取元素时，各有什么特点？
@@ -59,9 +61,9 @@ Java 容器分为 Collection 和 Map 两大类，Collection集合的子接口有
 
 > Collection集合主要有List和Set两大接口
 
-List：一个有序（元素存入集合的顺序和取出的顺序一致）容器，元素可以重复，可以插入多个null元素，元素都有索引。常用的实现类有 ArrayList、LinkedList 和 Vector。
+List：一个存取有序（元素存入集合的顺序和取出的顺序一致）容器，元素可以重复，可以插入多个null元素，元素都有索引。常用的实现类有 ArrayList、LinkedList 和 Vector。
 
-Set：一个无序（存入和取出顺序有可能不一致）容器，不可以存储重复元素，只允许存入一个null元素，必须保证元素唯一性。Set 接口常用实现类是 HashSet、LinkedHashSet 以及 TreeSet。
+Set：一个存取无序（存入和取出顺序有可能不一致）容器，不可以存储重复元素，只允许存入一个null元素，必须保证元素唯一性。Set 接口常用实现类是 HashSet、LinkedHashSet 以及 TreeSet。
 
 >  Map是一个键值对集合，存储键、值和之间的映射。
 
@@ -80,14 +82,19 @@ LinkedList： 双向循环链表
 
 #### 1.7.1.2 Set
 HashSet（无序，唯一）：基于 HashMap 实现的，底层采用 HashMap 来保存元素
+
 LinkedHashSet： LinkedHashSet 继承与 HashSet，并且其内部是通过 LinkedHashMap 来实现的。有点类似于我们之前说的LinkedHashMap 其内部是基于 Hashmap 实现一样，不过还是有一点点区别的。
+
 TreeSet（有序，唯一）： 红黑树(自平衡的排序二叉树。)
 
 ### 1.7.2 Map
 
 HashMap： JDK1.8之前HashMap由数组+链表组成的，数组是HashMap的主体，链表则是主要为了解决哈希冲突而存在的（“拉链法”解决冲突）.JDK1.8以后在解决哈希冲突时有了较大的变化，当链表长度大于阈值（默认为8）时，将链表转化为红黑树，以减少搜索时间。
+
 LinkedHashMap：LinkedHashMap 继承自 HashMap，所以它的底层仍然是基于拉链式散列结构即由数组和链表或红黑树组成。另外，LinkedHashMap 在上面结构的基础上，增加了一条双向链表，使得上面的结构可以保持键值对的插入顺序。同时通过对链表进行相应的操作，实现了访问顺序相关逻辑。
+
 HashTable： 数组+链表组成的，数组是 HashMap 的主体，链表则是主要为了解决哈希冲突而存在的
+
 TreeMap： 红黑树（自平衡的排序二叉树）
 
 ## 1.8 哪些集合类是线程安全的？
@@ -126,6 +133,7 @@ System.out.println(list.size());
 Iterator 接口提供遍历任何 Collection 的接口。我们可以从一个 Collection 中使用迭代器方法来获取迭代器实例。迭代器取代了 Java 集合框架中的 Enumeration，迭代器允许调用者在迭代过程中移除元素。
 
 ### 2.1.2 Iterator 怎么使用？有什么特点？
+
 Iterator 使用代码如下：
 
 ```java
