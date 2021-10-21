@@ -160,6 +160,13 @@ List list=Collections.synchronizedList(new LinkedList(...));
 
 `线程安全ConcurrentHashMap`：通过 `Synchronized` 与 `Unsafe的CAS方法` 共同完成线程安全操作。`设置节点`，`复制节点`到扩张后的table时采用Synchronized同步机制。`获得阈值SizeCtl` 或 `某个节点`时采用Unsafe的CAS方法；扩容方法 `tryPresize`；添加元素时，检测到某个元素的hash为MOVED，帮助数组扩容 `helpTransfer`；
 
+
+
+ConcurrentHashMap 选择了与 HashMap 相同的Node数组+链表+红黑树结构；在锁的实现上，抛弃了原有的 Segment 分段锁，采用CAS + synchronized实现更加细粒度的锁。
+
+将锁的级别控制在了更细粒度的哈希桶数组元素级别，也就是说只需要锁住这个链表头节点（红黑树的根节点），就不会影响其他的哈希桶数组元素的读写，大大提高了并发度。
+
+
 ​       ![0](https://i.loli.net/2021/10/12/Rygi1XrvnaodOKI.png)
 
 
@@ -763,7 +770,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 > 原子性(Atomicity)
 
-- 内存模型保证原子性变量的操作：lock [ `主内存-》工作内存`：read、load、assign、use] [ `工作内存-》主内存`：store、write] unlock
+- 内存模型保证原子性变量的操作：lock [ `主内存-》工作内存`：read、load、assign、use] [ `工作内存-》主内存`：store、write ] unlock
 
 - Synchronize 同步块保证原子性变量操作：通过节码指令 [ `同步块`: monitorenter 和 monitorexit] [ `方法`：ACC_SYNCHRONIZED ]完成隐式操作。
 
@@ -779,7 +786,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 #### 堆Heap/元空间MetaSpace/栈Stack（Java栈/本地栈/程序计数器）
 
-​    ![0](https://i.loli.net/2021/10/13/iVO9sYSQHp2u4J1.png)
+![0](https://i.loli.net/2021/10/13/iVO9sYSQHp2u4J1.png)
 
  `从线程共享的角度来看，堆和元空间是所有线程共享的，而虚拟机栈、本地方法栈、程序计数器是线程内部私有的`
 
@@ -920,11 +927,21 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 #### 双亲委派模型
 
-
-
 ​    ![0](https://i.loli.net/2021/10/13/FRIV89xUMLciDtd.png)
 
-两个关键问题：`是否加载过` 与 `是否可以加载`
+
+
+> 简化过程：
+
+工作原理：从下往上问：是否加载过？从上往下问：是否可以加载？classNotFound
+
+作用：保证JVM核心类不被随意篡改，不重复加载相同的class
+
+
+
+两个关键问题：`是否加载过` 与 `是否可以加载`。自底向上问加载器，是否加载过？还没有？直到顶部的启动类加载器，顶部启动类加载器没有加载过这个类的话，从从上到下问加载器，是否能加载这个类？知道底部的自定义加载器，它都没有加载过，那只好报classNotFound
+
+
 
 > 类加载器种类
 
@@ -2380,6 +2397,15 @@ Swagger 广泛用于可视化 API，使用 Swagger UI 为前端开发人员提�
 ControllerAdvice和ExceptionHandler注解实现全局异常处理
 
 [详情参考](/07项目开发/微服务开发框架?id=系统的异常是怎么处理的)
+
+#### Spring Boot 配置返回结果为xml
+
+- 实体类以及其子类添加`@XmlRootElement`注解
+- 请求注解添加  @RequestMapping(value = "/sitemap.xml", produces = {"application/xml;charset=UTF-8"}, method = RequestMethod.GET)
+
+#### Spring Boot 添加缓存的方式
+
+redisTemplate 与注解 @EnableCaching
 
 
 
@@ -3923,11 +3949,14 @@ public class GatewayBootstrap {
 
 
 ##### 缓存Redis
+
 > 数据库和缓存双写的一致性问题
 
 首页服务读取存储于缓存中的广告数据，数据库和缓存双写一致性，采用的`先更新数据库，再删除缓存`，缓存删除失败，采用`消息队列失败重试机制删除`，保证缓存最终是删除成功的，`实现最终一致性`，更新缓存的先删除缓存再更新，保证是最新的。如果说要强一致性，对同个数据的不同操作放到`JVM队列`当中有序执行，对后续重复更新缓存的操作给予过滤，避免重复操作。
 
-- 设置缓存的两种方式
+> RedisTemplate模版方法
+
+- RedisTemplate设置缓存的两种方式:
 
 redisTemplate.boundXXXOps(XXX).set(value)
 
@@ -3943,6 +3972,22 @@ redisTemplate.opsForXXX().set(key, value, timeout)
 获取：JSON.*parseArray*(PayChannelParamDTO_String, PayChannelParamDTO.class);
 
 ​    ![0](https://i.loli.net/2021/10/11/Y6Wk2hsOij1HNZF.png)
+
+
+
+> 注解的方式开发
+
+@EnableCaching：启动类开启缓存注解
+
+@Cachable：根据方法的请求参数对其结果进行缓存
+
+@CacheEvict：根据条件对缓存进行清空
+
+@CachePut：根据方法的请求参数对其结果进行缓存
+
+[实践操作](https://blog.csdn.net/Chen_0218/article/details/118369629)
+
+
 
 ##### 消息队列 RocketMQ
 
