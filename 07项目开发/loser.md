@@ -4,6 +4,16 @@
 
 ## 1.1 基本数据类型
 
+基本数据类型与包装数据类型区别
+
+==与equals的区别（hashCode）
+
+
+
+
+
+
+
 ## 1.2 类/抽象类/接口
 
 ## 1.3 集合Collection/map
@@ -22,7 +32,7 @@ HashSet
 
 要求：需要为类重写`hashCode()` 和 `equals()`方法。 
 
-TreeSet 
+TreeSet
 
 特点：不重复，有序。
 
@@ -55,7 +65,7 @@ List 接口直接继承 Collection 接口，它定义为可以存储重复元素
 `非线程安全`，采用以下方法变成线程安全：
 
 ```java
-List list=Collections.synchronizedList(new LinkedList(...));
+List list = Collections.synchronizedList(new LinkedList(...));
 ```
 
 - linkedList为双链表，通过size，两个指针：first和last指针，每个节点有item自身、前驱prev和后驱next两个节点来维护双链表的关系。
@@ -105,7 +115,7 @@ List list=Collections.synchronizedList(new LinkedList(...));
 
 > 扩容grow()：
 
-- 当添加第1个元素时，数组容量0->10,添加第11个元素时，数组容量15，每次扩容后，当前容量变为原来容量的1.5倍，最大值为Integer.MAX_VALUE - 8
+- 当添加第1个元素时，数组容量0->10，添加第11个元素时，数组容量15，每次扩容后，当前容量变为原来容量的1.5倍，最大值为Integer.MAX_VALUE - 8
 
 > 实现有序排列接口Comparator和Comparable的区别
 
@@ -356,7 +366,17 @@ public class HungrySingleton {
 
 ### 如何解决线程安全的问题
 
-- 通过synchronize与手动加锁和解锁的方式 volatile
+- 通过Synchronize与手动加锁和解锁的方式 volatile
+
+
+
+> Synchronized与lock的区别？
+
+
+
+
+
+
 
 ### 创建多线程方式
 
@@ -474,9 +494,8 @@ public ThreadPoolExecutor(int corePoolSize,
 
 > 线程池的创建方式
 
-- `FixedThreadPool` 和 `SingleThreadPool`： 允许的请求队列长度为 Integer.MAX_VALUE，可能会堆积大量的请求，从而导致 `OOM`
-- `CachedThreadPool`： 允许的创建线程数量为 Integer.MAX_VALUE，可能会创建大量的线程，从而导致 OOM
-- 使用ThreadPoolExecutor自定义创建
+- Excutors工具类提供newXXXThreadPool方式创建，`newFixedThreadPool` 、 `newSingleThreadPool`和`newCachedThreadPool`： 允许的请求队列长度为 Integer.MAX_VALUE，可能会堆积大量的请求，从而导致 `OOM`
+- 使用ThreadPoolExecutor自定义参数创建
 
 ```java
 // 自定义线程池
@@ -780,7 +799,15 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 > 有序性(Ordering)
 
-`Java 语言通过 volatile 和 synchronize 两个关键字来保证线程之间操作的有序性`。volatile 自身就禁止指令重排，而 synchronize 则持有同一个锁的两个同步块只能串行的进入。
+`Java 语言通过 volatile 和 synchronize 两个关键字来保证线程之间操作的有序性`。volatile 自身就`禁止指令重排`，而 synchronize 则持有同一个锁的两个同步块只能串行的进入。
+
+
+
+> synchronized与volatile的区别？
+
+通过原子性、可见行、有序性阐述它们的区别？
+
+
 
 ### 2.3.2 Java内存结构
 
@@ -814,9 +841,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 
 
-
-
-​    ![0](https://i.loli.net/2021/10/11/TlXW5Fu4CcD6eOk.jpg)
+![0](https://i.loli.net/2021/10/11/TlXW5Fu4CcD6eOk.jpg)
 
 
 
@@ -840,9 +865,9 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 - YGC出现promotion failure（晋升失败）
 
-  promotion failure发生在Young GC, 如果Survivor区当中存活对象的年龄达到了设定值，会就将Survivor区当中的对象拷贝到老年代，如果老年代的空间不足，就会发生promotion failure，接下去就会发生Full GC.
+  promotion failure发生在Young GC， 如果Survivor区当中存活对象的年龄达到了设定值，会就将Survivor区当中的对象拷贝到老年代，如果老年代的空间不足，就会发生promotion failure，接下去就会发生Full GC.
 
-   在发生YGC是会判断，是否安全，这里的安全指的是，当前老年代空间可以容纳YGC晋升的对象的平均大小，如果不安全，就不会执行YGC,转而执行Full GC。
+   在发生YGC是会判断，是否安全，这里的安全指的是，当前老年代空间可以容纳YGC晋升的对象的平均大小，如果不安全，就不会执行YGC，转而执行Full GC。
 
 - 显示调用System.gc().可以设置DisableExplicitGC来禁止调用System.gc引发Full GC
 
@@ -850,13 +875,13 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 > 什么时候新生代的存活对象会到老年代中?
 
-上面的复制算法虽然好,但是总会产生存活对象满了的情况,这个时候大对象想要放入新生代放不下区,该怎么办?
+上面的复制算法虽然好，但是总会产生存活对象满了的情况，这个时候大对象想要放入新生代放不下区，该怎么办?
 
 第一种的情况就是将躲过 `15次MinorGC的对象 `移动到老年代.
 
-第二种就是 `动态年龄对象判断`，既Survivor区的经历过两次GC的对象大小大于Survivor区容量的一半的时候,如Survivor区是100m,里面的对象之和大于50m.就将这些2次GC还存活的对象移入到老年代中去.
+第二种就是 `动态年龄对象判断`，既Survivor区的经历过两次GC的对象大小大于Survivor区容量的一半的时候，如Survivor区是100m，里面的对象之和大于50m.就将这些2次GC还存活的对象移入到老年代中去.
 
-第三种就是 `大对象` ,还没有进入到新生代的时候就被移动到老年代,这里有个参数,为-XX:PretenureSizeThreshold,可以设置值,比如1m,那么再进入堆内存的时候,就会检查这个实例对象的大小,如果大于这个阈值,就直接进入到老年代。
+第三种就是 `大对象` ，还没有进入到新生代的时候就被移动到老年代，这里有个参数，为-XX:PretenureSizeThreshold，可以设置值，比如1m，那么再进入堆内存的时候，就会检查这个实例对象的大小，如果大于这个阈值，就直接进入到老年代。
 
 > Minor GC后存活的对象晋升到老年代时发生Promotion failure，有两种情况会触发Full GC
 
@@ -903,9 +928,9 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 ​    Xss 栈大小。线程创建后，分配给每一个线程的大小。
 
-​    -XX:NewRatio=n 设置年轻代与年老代的比值。 如：3 ；年老代:年轻代=3 ,年轻代=1/4；
+​    -XX:NewRatio=n 设置年轻代与年老代的比值。 如：3 ；年老代:年轻代=3 ，年轻代=1/4；
 
-​    -XX:SurvivorRatio=n 设置年轻代中Eden区与两个Survivor区的比值。如：3 ；Eden:Survivor=3:2,则一个Survivor占了1/5
+​    -XX:SurvivorRatio=n 设置年轻代中Eden区与两个Survivor区的比值。如：3 ；Eden:Survivor=3:2，则一个Survivor占了1/5
 
 ​    -XX:MaxPermSize = n 设置持久代大小
 
@@ -1047,11 +1072,86 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 
 ## 4.1 Oracle
 
-### SQL优化原理：
+### SQL基础 左右连接
 
-索引/分区/分库/分表 -》 大部分数据走索引，少部分数据物理读
 
-### SQL基础 左右连接 等
+
+### SQL优化
+
+#### 优化原理
+
+- 索引/分区/分库/分表 -》 大部分数据走索引，少部分数据物理读。
+
+- 更新统计信息
+
+- 复合索引满足：最左匹配原则
+
+#### 如何查询出执行慢的SQL语句
+
+设置定时任务，每天早上获取是否有需要优化的SQL语句，有的话进行`告警`提示。
+
+> Oracle通过dba权限账号查询获取
+
+- 查询执行最慢的sql
+
+```sql
+select *
+ from (select sa.SQL_TEXT,
+    sa.SQL_FULLTEXT,
+    sa.EXECUTIONS "执行次数",
+    round(sa.ELAPSED_TIME / 1000000, 2) "总执行时间",
+    round(sa.ELAPSED_TIME / 1000000 / sa.EXECUTIONS, 2) "平均执行时间",
+    sa.COMMAND_TYPE,
+    sa.PARSING_USER_ID "用户ID",
+    u.username "用户名",
+    sa.HASH_VALUE
+   		from v$sqlarea sa
+   		left join all_users u
+   		on sa.PARSING_USER_ID = u.user_id
+   		where sa.EXECUTIONS > 0 where u.username='填写同户名'
+   		order by (sa.ELAPSED_TIME / sa.EXECUTIONS) desc)
+ where rownum <= 50;#查询的数据数目
+```
+
+
+
+- 查询次数最多的sql
+
+```sql
+select *
+ from (select s.SQL_TEXT,
+   s.EXECUTIONS "执行次数",
+   s.PARSING_USER_ID "用户名",
+   rank() over(order by EXECUTIONS desc) EXEC_RANK
+   from v$sql s
+   left join all_users u
+   on u.USER_ID = s.PARSING_USER_ID) t
+ where exec_rank <= 100;
+```
+
+
+
+> Mysql 通过配置方式获取
+
+```shell
+mysql> set global slow_query_log=1;
+# 定义时间SQL查询的超时时间
+mysql> set global long_query_time = 0.005;
+# 查看慢查询日志的保存路径
+mysql> show global variables like ‘slow_query_log_file’;
+# 查看慢查询
+cat /var/log/mysql/slow.log
+```
+
+
+
+### 分库分表
+
+
+
+
+
+
 
 ### 事务隔离级别
 
@@ -1351,7 +1451,7 @@ redis 突然set很多key，单线程会不会长时间阻塞
 
 一般我们创建对象都是new关键的方式，有了Spring了之后，可以使用注解创建Bean对象，@Compoment @Service @Respository @Mapper @Autowired @Resource
 
-`DI(Dependecy Inject,依赖注入)`是实现控制反转的一种设计模式，依赖注入就是将实例变量传入到一个对象中去。
+`DI(Dependecy Inject，依赖注入)`是实现控制反转的一种设计模式，依赖注入就是将实例变量传入到一个对象中去。
 
 
 
@@ -1408,8 +1508,8 @@ public class MyBeanFactory {
             MyBeanFactory.class.getClassLoader(), 
             new Class[] {CustomerDao.class}, 
             new InvocationHandler() {
-                public Object invoke(Object proxy, Method method, 
-                                     Object[] args) throws Throwable {
+                public Object invoke(Object proxy, Method method,Object[] args) 
+                    throws Throwable {
                     myAspect.myBefore(); // 前增强
                     Object obj = method.invoke(customerDao, args);
                     myAspect.myAfter(); // 后增强
@@ -1501,7 +1601,7 @@ public class MyBeanFactory {
 
  ![0](https://i.loli.net/2021/10/14/VFeikm9qLQoPUJy.png)
 
-解释：执行到核心业务方法或者类时，会先执行AOP。在aop的逻辑内，先走 `@Around` 注解的方法。然后是 `@Before`注解的方法，然后这两个都通过了，走核心代码，核心代码走完，无论核心有没有返回值，都会走 `@After`方法。然后如果程序无异常，正常返回就走 `@AfterReturn`,有异常就走 `@AfterThrowing`
+解释：执行到核心业务方法或者类时，会先执行AOP。在aop的逻辑内，先走 `@Around` 注解的方法。然后是 `@Before`注解的方法，然后这两个都通过了，走核心代码，核心代码走完，无论核心有没有返回值，都会走 `@After`方法。然后如果程序无异常，正常返回就走 `@AfterReturn`，有异常就走 `@AfterThrowing`
 
 
 
@@ -1704,16 +1804,16 @@ NESTED：
 
 MANDATORY/NEVER：必须需要事务/必须不要事务，没有就抛出异常
 
-SUPPORTS：如果当前有事务，则加入当前事务；如果没有事务，则以非事务方式执行。
+SUPPORTS：如果当前有事务，则加入当前事务（`支持事务`）；如果没有事务，则以非事务方式执行。
 
-NOT_SUPPORTED：如果当前存在事务，则挂起当前事务；如果没有事务，则以非事务方式执行。
+NOT_SUPPORTED：如果当前存在事务，则挂起当前事务（`不支持事务`）；如果没有事务，则以非事务方式执行。
 
 同一类中自调用方法，没有事务注解的方法调用有事务注解的方法，会使有事务注解的方法失效。
 
 #### 事务隔离级别
 
 - 读取未提交（Read Uncommitted）：事务可以读取未提交的数据，也称作脏读（Dirty Read）。一般很少使用。
-- 读取已提交（Read Committed）：是大都是 DBMS （如：Oracle, SQLServer）默认事务隔离。执行两次同意的查询却有不同的结果，也叫不可重复读。
+- 读取已提交（Read Committed）：是大都是 DBMS （如：Oracle， SQLServer）默认事务隔离。执行两次同意的查询却有不同的结果，也叫不可重复读。
 - 可重复读（Repeatable Read）：是 MySQL 默认事务隔离级别。能确保同一事务多次读取同一数据的结果是一致的。可以解决脏读的问题，但理论上无法解决幻读（Phantom Read）的问题。
 - 可串行化（Serializable）：是最高的隔离级别。强制事务串行执行，会在读取的每一行数据上加锁，这样虽然能避免幻读的问题，但也可能导致大量的超时和锁争用的问题。很少会应用到这种级别，只有在非常需要确保数据的一致性且可以接受没有并发的应用场景下才会考虑。
 
@@ -1800,7 +1900,7 @@ public class UserAction {
  }
 ```
 
-还有一种更为便捷的注解方式注入属性@Resource,相当于@Autowired 和@Qualifier一起使用
+还有一种更为便捷的注解方式注入属性@Resource，相当于@Autowired 和@Qualifier一起使用
 
 ```java
 @Resource(name="userservice")
@@ -1823,7 +1923,7 @@ private UserService userservice;
 
 1）一般属性注入@Value
 
-方法一：Spring为我们提供了注解 @value,用于对一般属性注入，可以不用提供set方法，它是通过反射的Field赋值,破坏了封装性
+方法一：Spring为我们提供了注解 @value，用于对一般属性注入，可以不用提供set方法，它是通过反射的Field赋值，破坏了封装性
 
 ```java
 @Value("Tom") 
@@ -2032,7 +2132,7 @@ public String requestparam1(@RequestParam String username);
 
 如果请求参数中包含多个同名参数，应该如何接收呢？如给用户授权时，可能授予多个权限。
 
-假如请求参数类似于url?role=admin&rule=user，则实际roleList参数入参的数据为“admin,user”，即多个数据之间使用“，”分割；我们应该使用如下方式来接收多个请求参数：
+假如请求参数类似于url?role=admin&rule=user，则实际roleList参数入参的数据为“admin，user”，即多个数据之间使用“，”分割；我们应该使用如下方式来接收多个请求参数：
 
 ```java
 public String requestparam7(@RequestParam(value="role") String[] roleList)
@@ -2048,7 +2148,7 @@ public String requestparam8(@RequestParam(value="list") List<String> list)
 
 使用地方：都是用于Controller类方法上。
 
-数据格式：Content-Type: application/json, application/xml，不是application/x-www-form-urlencoded编码的内容
+数据格式：Content-Type: application/json， application/xml，不是application/x-www-form-urlencoded编码的内容
 
 @RequestBody 将HTTP请求正文转换为适合的HttpMessageConverter对象。
 
@@ -2212,7 +2312,7 @@ logging:
 - @ConditionalOnMissingBean：当容器里不存在指定bean的条件下。
 - `@ConditionalOnClass：当类路径下有指定类的条件下`。
 - @ConditionalOnMissingClass：当类路径下不存在指定类的条件下。
-- @ConditionalOnProperty：指定的属性是否有指定的值，比如@ConditionalOnProperties(prefix=”xxx.xxx”, value=”enable”, matchIfMissing=true)，代表当xxx.xxx为enable时条件的布尔值为true，如果没有设置的情况下也为true。
+- @ConditionalOnProperty：指定的属性是否有指定的值，比如@ConditionalOnProperties(prefix=”xxx.xxx”, value=”enable”， matchIfMissing=true)，代表当xxx.xxx为enable时条件的布尔值为true，如果没有设置的情况下也为true。
 
 @EnableConfigurationProperties -》 XXXProperties
 
@@ -2220,7 +2320,7 @@ logging:
 
 > 简单理解
 
-注解 @EnableAutoConfiguration, @Configuration, @ConditionalOnClass 就是自动配置的核心，
+注解 @EnableAutoConfiguration， @Configuration， @ConditionalOnClass 就是自动配置的核心，
 
 @EnableAutoConfiguration 给容器导入META-INF/spring.factories 里定义的自动配置类。
 
@@ -3120,7 +3220,7 @@ LAST_WAIT：确认客户端发过来的内容
 
 > 请求头
 
-`Referer：`表示这个请求是从哪个url跳过来的,通过百度来搜索淘宝网,那么在进入淘宝网的请求报文中,Referer的值就是:www.baidu.com。如果是直接访问就不会有这个头。
+`Referer：`表示这个请求是从哪个url跳过来的,通过百度来搜索淘宝网，那么在进入淘宝网的请求报文中，Referer的值就是:www.baidu.com。如果是直接访问就不会有这个头。
 
 常用于:防盗链。
 
@@ -3482,6 +3582,62 @@ HTTPS作为一种安全的应用层协议，它使用了以上三种加密手段
 ## 线程通信
 
 ## 进程通信
+
+# 9. 架构设计
+
+## 常规问题
+
+### 网站慢如何做优化？
+
+问题场景：网站访问速度很慢，分析原因，如何解决问题？
+
+一、服务端原因
+
+（1）可能原因一：服务器出口带宽不够用+跨运营商网络导致带宽缩减。
+
+（2）可能原因二：服务器负载过重，CPU占用大。
+
+（3）可能原因三：后端开发没做SQL优化导致数据库读写性能差。
+
+（4）可能原因四：数据库达到瓶颈，数据量庞大，导致读写性能差。
+
+二、针对原因，检测问题，提出解决方案：
+
+（1）确认网站是否是真的慢，通过浏览器的开发者模式的network选项，查看网页各个资源加载时间。对常规不变的资源采用CDN（content-delivery-network：内容分发网络）方式加载。
+
+（2）监控服务器是否超过负载。
+
+（4）查找数据库中查询慢的SQL语句，
+
+（5）分库分表，mysql主从复制（主写/复读）；缓存机制
+
+（6）系统拆分，做成多个微服务，web服务器集群部署，增加负载均衡和api网关。
+
+
+
+第一步：登录后台服务器/监控平台，查看系统资源是否达到上限，例如：CPU、内存、磁盘、I/O、网络带宽等，如果是这些问题，先将这些问题逐一解决：
+
+如果是CPU的问题，则需要查看一下CPU占比比较高的进程，然后使用jstack命令生成进程的堆栈信息，看是否发生频繁Full GC，如果是的话，还需要看一下内存快照，分析一下内存情况（可以使用java自带的或第三方工具）；如果是磁盘空间满了，及时清理磁盘；如果是带宽满了，联系网络工程师解决。如果以上这些问题都没有，则进行第二步。
+
+第二步：检查应用服务器（Jboss/Tomcat）的线程池配置是否合理，看一下请求的排队现象是否严重，如果严重则需要重新设置合理的线程池。同样，检查一下数据库的连接池设置是否合理，增大连接池设置，同时检查一下是否有慢sql，如果有慢sql，则进行优化（优化方案是查看执行计划，设置合理的索引等）。
+
+第三步：查看访问慢的服务的调用链，查看一下调用链中的每一步响应时间是否合理，如果不合理，则联系相关系统的负责人进行排查和解决。
+
+第四步：检查web服务器的请求日志，看一下是否存在Doss攻击，如果有Doss攻击，则将攻击者的IP添加到防火墙的黑名单里。
+
+
+
+
+
+### 分布式事务
+
+### 分布式锁
+
+
+
+
+
+
 
 # [10. 数据结构和算法](/05数据结构和算法/数据结构和算法)
 
