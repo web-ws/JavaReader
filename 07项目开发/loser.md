@@ -2,13 +2,27 @@
 
 # 1. Java基础
 
-## 1.1 基本数据类型
+## 1.1 基本数据类型与包装数据类型
+
+
 
 基本数据类型与包装数据类型区别
 
-==与equals的区别（hashCode）
+== 与equals的区别（hashCode）
 
 
+
+
+
+### String 类型
+
+> new String("") 与 String = "1231"区别
+
+> String Builder 与 String Buffer区别
+
+- String 中的对象是不可变的，也就可以理解为常量，线程安全。
+- String Buffer 对⽅法加了同步锁或者对调⽤的⽅法加了同步锁，所以是线程安全的。
+- String Builder 并没有对⽅法进⾏加同步锁，所以是⾮线程安全的。
 
 
 
@@ -156,7 +170,7 @@ List list = Collections.synchronizedList(new LinkedList(...));
 
 `两次扰动获得数组元素的位置`：通过 key 的hash 后，再把hash值 `高低位异或`，再 与 数组容量长度-1 做`与运算`。
 
-`首次扩容和超阈扩容`：`tableSizefor` 容量大小都是2的幂次方，便于做与运算，减少碰撞；新容量和阈值都扩容为原来的2倍。
+`首次扩容和超阈扩容`：`tableSizefor` 容量大小都是2的幂次方（17-》32，20-》32），便于做与运算，减少碰撞；新容量和阈值都扩容为原来的2倍。
 
 `扩容后元素位置的变化`：要么停留在原始位置，要么移动到 `原始位置+旧容量` 这个位置上。
 
@@ -168,6 +182,10 @@ List list = Collections.synchronizedList(new LinkedList(...));
 
 `线程安全问题`：`链表头节点存储元素` 统计存放元素`++size`，ABA，原来的A已经不是原来的A，通过concurrentHashMap解决线程安全的问题。
 
+> ConcurrentHashMap
+
+
+
 `线程安全ConcurrentHashMap`：通过 `Synchronized` 与 `Unsafe的CAS方法` 共同完成线程安全操作。`设置节点`，`复制节点`到扩张后的table时采用Synchronized同步机制。`获得阈值SizeCtl` 或 `某个节点`时采用Unsafe的CAS方法；扩容方法 `tryPresize`；添加元素时，检测到某个元素的hash为MOVED，帮助数组扩容 `helpTransfer`；
 
 
@@ -175,6 +193,50 @@ List list = Collections.synchronizedList(new LinkedList(...));
 ConcurrentHashMap 选择了与 HashMap 相同的Node数组+链表+红黑树结构；在锁的实现上，抛弃了原有的 Segment 分段锁，采用CAS + synchronized实现更加细粒度的锁。
 
 将锁的级别控制在了更细粒度的哈希桶数组元素级别，也就是说只需要锁住这个链表头节点（红黑树的根节点），就不会影响其他的哈希桶数组元素的读写，大大提高了并发度。
+
+存取的过程：
+
+1. 根据 key 计算出 hash 值；
+
+2. 判断是否需要进行初始化；
+
+3. 定位到 Node，拿到首节点 f，判断首节点 f：
+
+   1. 如果为 null ，则通过 Unsafe.CAS 的方式尝试添加；
+
+   2. 如果为 f.hash = MOVED = -1 ，说明其他线程在扩容，参与一起扩容HelpTransfer；
+
+   3. 如果都不满足 ，synchronized 锁住 f 节点，判断是链表还是红黑树，遍历插入；
+
+4. 当在链表长度达到 8 ，数组容量小于64的时候，数组扩容；数组容量大于64的时候，将链表转换为红黑树。
+   
+
+get的过程：
+
+1. 根据 key 计算出 hash 值，判断数组是否为空；
+2. 如果是首节点，就直接返回；
+3. 如果是[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)结构，就从[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)里面查询；
+4. 如果是[链表](https://blog.csdn.net/jump/super-jump/word?word=链表)结构，循环遍历判断。
+
+> ConcurrentHashMap 的 get 方法是否要加锁，为什么？★★★
+
+get 方法不需要加锁。因为 Node 的元素 value 和指针 next 是用 volatile 修饰的，在多线程环境下线程A修改节点的 value 或者新增节点的时候是对线程B可见的。
+
+```java
+volatile V val;
+volatile Node<K,V> next;
+```
+
+
+
+> get 方法不需要加锁与 volatile 修饰的哈希桶数组有关吗？★★★
+
+没有关系。哈希桶数组table用 volatile 修饰主要是保证在数组扩容的时候保证可见性。
+
+```java
+transient volatile Node<K,V>[] table;
+```
+
 
 
 ​       ![0](https://i.loli.net/2021/10/12/Rygi1XrvnaodOKI.png)
@@ -292,19 +354,17 @@ ConcurrentHashMap 选择了与 HashMap 相同的Node数组+链表+红黑树结�
 
       - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
 
+## Java事件处理机制
 
+java中的事件机制的参与者有3种角色：
 
+- event object：事件状态对象，用于listener的相应的方法之中，作为参数，一般存在与listerner的方法之中
+- event source：具体的事件源，比如说，你点击一个button，那么button就是event source，要想使button对某些事件进行响应，你就需要注册特定的listener。
+- event listener：对每个明确的事件的发生，都相应地定义一个明确的Java方法。这些方法都集中定义在事件监听者（EventListener）接口中，这个接口要继承 java.util.EventListener。 实现了事件监听者接口中一些或全部方法的类就是事件监听者。
 
+![image-20211024093227362](https://i.loli.net/2021/10/24/jnOmIiwo3FMv8cH.png)
 
-## String 类型
-
-> new String("") 与 String = "1231"区别
-
-> String Builder 与 String Buffer区别
-
-- String 中的对象是不可变的，也就可以理解为常量，线程安全。
-- String Buffer 对⽅法加了同步锁或者对调⽤的⽅法加了同步锁，所以是线程安全的。
-- String Builder 并没有对⽅法进⾏加同步锁，所以是⾮线程安全的。
+调度框架：输入事件/输出事件/时间事件
 
 ## 未提问内容
 
@@ -771,9 +831,27 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 - 线程控制：挂起/停止/恢复
 - 未提问内容
 
-## 2.2 输入/输出
+## 2.2 输入/输出I/O
 
-  
+### IO、NIO、AIO
+
+[参考详情](/01编程语言/Java/JavaIO)
+
+- IO流（同步、阻塞）
+
+- NIO（同步、非阻塞）
+
+NIO之所以是同步，是因为它的accept/read/write方法的内核I/O操作都会阻塞当前线程
+
+Channel（通道）、Buffer（缓冲区）、Selector（选择器）
+
+
+
+- NIO2（异步、非阻塞）AIO
+
+
+
+IO 都是同步阻塞模式，所以需要多线程以实现多任务处理。而 NIO 则是利用了单线程轮询事件的机制，通过高效地定位就绪的 Channel，来决定做什么，仅仅 select 阶段是阻塞的，可以有效避免大量客户端连接时，频繁线程切换带来的问题，应用的扩展能力有了非常大的提高
 
 ## 2.3 JVM
 
@@ -791,7 +869,7 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 - 内存模型保证原子性变量的操作：lock [ `主内存-》工作内存`：read、load、assign、use] [ `工作内存-》主内存`：store、write ] unlock
 
-- Synchronize 同步块保证原子性变量操作：通过节码指令 [ `同步块`: monitorenter 和 monitorexit] [ `方法`：ACC_SYNCHRONIZED ]完成隐式操作。
+- Synchronize 同步块保证原子性操作：通过节码指令 [ `同步块`: monitorenter 和 monitorexit] [ `方法`：ACC_SYNCHRONIZED ]完成隐式操作。
 
 > 可见性(Visibility)
 
@@ -816,6 +894,14 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 ![0](https://i.loli.net/2021/10/13/iVO9sYSQHp2u4J1.png)
 
  `从线程共享的角度来看，堆和元空间是所有线程共享的，而虚拟机栈、本地方法栈、程序计数器是线程内部私有的`
+
+- 堆内存：字符串常量、对象
+- 元空间：类元信息、成员变量、静态属性、方法、常量等类的相关信息。
+- JVM栈：方法的执行内存区域，包括局部变量表、操作栈、动态链接、方法返回地址。
+- Native栈：本地方法服务
+- 程序计数器：用于线程存放执行指令的偏移量和行号指示器等，线程执行或恢复都要依赖程序计数器。
+
+
 
 ​    ![0](https://i.loli.net/2021/10/13/FVEGpR6eK3iZBrC.png)
 
@@ -877,16 +963,18 @@ semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一�
 
 上面的复制算法虽然好，但是总会产生存活对象满了的情况，这个时候大对象想要放入新生代放不下区，该怎么办?
 
-第一种的情况就是将躲过 `15次MinorGC的对象 `移动到老年代.
+第一种的情况就是经过 `15次MinorGC的对象 `移动到老年代.(默认15岁，配置参数`-XX:MaxTenuringThreshold`)
 
-第二种就是 `动态年龄对象判断`，既Survivor区的经历过两次GC的对象大小大于Survivor区容量的一半的时候，如Survivor区是100m，里面的对象之和大于50m.就将这些2次GC还存活的对象移入到老年代中去.
+第二种就是 `动态年龄对象判断`，相同年龄所有对象的大小总和大于Survivor空间的一半，那么年龄大于等于该年龄的对象就会被移动到老年代，而不用等到15岁(默认)，如Survivor区是100m，里面的对象之和大于50m.就将这些2次GC还存活的对象移入到老年代中去.
 
-第三种就是 `大对象` ，还没有进入到新生代的时候就被移动到老年代，这里有个参数，为-XX:PretenureSizeThreshold，可以设置值，比如1m，那么再进入堆内存的时候，就会检查这个实例对象的大小，如果大于这个阈值，就直接进入到老年代。
+第三种就是 `大对象` ，还没有进入到新生代的时候就被移动到老年代，这里有个参数，为`-XX:PretenureSizeThreshold`，可以设置值，比如1m，那么再进入堆内存的时候，就会检查这个实例对象的大小，如果大于这个阈值，就直接进入到老年代。
 
-> Minor GC后存活的对象晋升到老年代时发生Promotion failure，有两种情况会触发Full GC
+第四种就是SurvivorTo区放不下，进行MinorGC的时候，发现ToSpace区放不下，那么把存活的对象放到老年代。
 
-- 之前每次晋升的对象的平均大小 > 老年代剩余空间
-- Minor GC后存活的对象超过了老年代剩余空间
+> Minor GC后存活的对象晋升到老年代时发生Promotion failure（晋升失败），有两种情况会触发Full GC
+
+- 历次晋升对象的平均大小 > 老年代连续空间
+- 新生代对象总大小 > 老年代连续空间
 
 这两种情况都是因为老年代会为新生代对象的晋升提供担保，而每次晋升的对象的大小是无法预测的，所以只能基于统计，一个是基于历史平均水平，一个是基于下一次可能要晋升的最大水平。
 
@@ -1006,16 +1094,16 @@ Java语言编写的，用户自定义类加载器，可以加载指定路径的c
 
 ### 2.3.5 垃圾回收算法
 
-> 对象存活判定
+#### 对象存活判定
 
 - 引用计数：引用为0时可以回收。
 - 可达性分析：一个对象到GC Roots没有任何引用链时，证明对象不可达，不可用。
 
 `GC Roots`包括：虚拟机栈中引用对象、本地方法栈中JNI引用对象、方法区中类静态属性实体引用对象、常量引用对象。
 
-> 垃圾回收算法
+#### 垃圾回收算法
 
-- 复制算法：`新生代`
+- 标记-复制算法：`新生代`
 - 标记-清理算法：`老年代`
 - 标记-压缩算法：`老年代`
 
@@ -1025,16 +1113,112 @@ Java语言编写的，用户自定义类加载器，可以加载指定路径的c
 
 ### 2.3.6 垃圾收集器
 
-#### CMS收集器（UseConcMarkSweepGC）并发标记清理收集器
+> 简化版本
+
+jdk1.7 默认垃圾收集器Parallel Scavenge（新生代【标记-复制算法】）+ Parallel Old（老年代【标记整理算法】）
+
+jdk1.8 默认垃圾收集器Parallel Scavenge（新生代）+Parallel Old（老年代）
+
+jdk1.9 默认垃圾收集器G1【从局部(两个Region之间)来看是基于"标记—复制"算法实现，从整体来看是基于"标记-整理"算法实现】
+
+高并发的场景采用：ParNew（新生代）+ CMS（老年代）
+
+用户线程和GC线程的串行与并行
+
+着重看 CMS + ParNew + ParOld
+
+
+
+> 详情版本
+
+
+
+```shell
+# 查看默认参数
+java -XX:+PrintCommandLineFlags -version
+# 查看GC的具体情况
+java -XX:+PrintGCDetails -version
+```
+
+#### 0. 垃圾收集器组合
+
+![img](https://i.loli.net/2021/10/24/XLckGmzaY2jCiUV.png)
+
+
+
+1. `-XX:+UseParallelGC`和`-XX:+UseParallelOldGC`结果一样，都是用的`Parallel Old`（在 JDK 7U4 之前确实 `UserParallelGC` 用的就是 `Serial`，在这个版本之后 `Parallel` 已经很成熟了，所以直接替换了旧的收集器，所以 JDK 7u4 以后的 7 和 JDK 8 老年代默认使用的都是 `Parallel` 收集器）
+2. `PS MarkSweep`只是回收器的别名，他可以指代`Serial Old`和`Parallel Old`。
+
+#### 1. Serial 收集器
+
+![img](https://i.loli.net/2021/10/24/bByP7uUCeK8G5cF.jpg)
+
+
+
+Serial 翻译为串行，也就是说它以串行的方式执行。
+
+它是单线程的收集器，只会使用一个线程进行垃圾收集工作。
+
+它的优点是简单高效，在单个 CPU 环境下，由于没有线程交互的开销，因此拥有最高的单线程收集效率。
+
+它是 Client 场景下的默认新生代收集器，因为在该场景下内存一般来说不会很大。它收集一两百兆垃圾的停顿时间可以控制在一百多毫秒以内，只要不是太频繁，这点停顿时间是可以接受的。
+
+#### 2. ParNew 收集器
+
+![img](https://i.loli.net/2021/10/24/4O6GklUcs5bwVBC.jpg)
+
+
+
+它是 Serial 收集器的多线程版本。
+
+它是 Server 场景下默认的新生代收集器，除了性能原因外，主要是因为除了 Serial 收集器，只有它能与 CMS 收集器配合使用。
+
+#### 3. Parallel Scavenge 收集器（推荐）
+
+与 ParNew 一样是多线程收集器。
+
+其它收集器目标是尽可能缩短垃圾收集时用户线程的停顿时间，而它的目标是达到一个可控制的吞吐量，因此它被称为“吞吐量优先”收集器。这里的吞吐量指 CPU 用于运行用户程序的时间占总时间的比值。
+
+停顿时间越短就越适合需要与用户交互的程序，良好的响应速度能提升用户体验。而高吞吐量则可以高效率地利用 CPU 时间，尽快完成程序的运算任务，适合在后台运算而不需要太多交互的任务。
+
+缩短停顿时间是以牺牲吞吐量和新生代空间来换取的：新生代空间变小，垃圾回收变得频繁，导致吞吐量下降。
+
+可以通过一个开关参数打开 `GC 自适应的调节策略（GC Ergonomics）`，就不需要手工指定新生代的大小（-Xmn）、Eden 和 Survivor 区的比例、晋升老年代对象年龄等细节参数了。虚拟机会根据当前系统的运行情况收集性能监控信息，`动态调整`这些参数以提供最合适的停顿时间或者最大的吞吐量。
+
+#### 4. Serial Old 收集器
+
+![img](https://i.loli.net/2021/10/24/o5v2t3riBlcDMAj.jpg)
+
+
+
+是 Serial 收集器的老年代版本，也是给 Client 场景下的虚拟机使用。如果用在 Server 场景下，它有两大用途：
+
+- 在 JDK 1.5 以及之前版本（Parallel Old 诞生以前）中与 Parallel Scavenge 收集器搭配使用。
+- 作为 CMS 收集器的后备预案，在并发收集发生 Concurrent Mode Failure 时使用。
+
+#### 5. Parallel Old 收集器（推荐）
+
+![img](https://i.loli.net/2021/10/24/Mb6H4YzwLOWv9Iq.jpg)
+
+
+
+是 Parallel Scavenge 收集器的老年代版本。
+
+在注重吞吐量以及 CPU 资源敏感的场合，都可以优先考虑 Parallel Scavenge 加 Parallel Old 收集器。
+
+#### 6. CMS 收集器（推荐）
+
+（UseConcMarkSweepGC）并发标记清理收集器
 
 CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时间为目标的收集器`。目前很大一部分的Java应用都集中在互联网站或B/S系统的服务端上，这类应用尤其重视服务的响应速度，希望系统停顿时间最短，以给用户带来较好的体验。
 
 从名字（包含“Mark Sweep”）上就可以看出CMS收集器是基于“标记-清除”算法实现的，它的运行过程包括以下四个步骤： 
 
-- 1. 初始标记（CMS initial mark）
-  2. 并发标记（CMS concurrent mark）
-  3. 重新标记（CMS remark）
-  4. 并发清除（CMS concurrent sweep）
+
+1. 初始标记（CMS initial mark）
+2. 并发标记（CMS concurrent mark）
+3. 重新标记（CMS remark）
+4. 并发清除（CMS concurrent sweep）
 
 `第 a、b步的初始标记和重新标记阶段依然会引发 STW ，而第c、d 步的并发标记和并发清除两个阶段可以和应用程序并发执行，也是比较耗时的操作，但并不影响应用程序的正常执行。`
 
@@ -1060,7 +1244,12 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 
 为了解决这个问题， CMS 可以通过配置`-XX:+UseCMSCompactAtFullCollection` 参数，强制 JVM 在 FGC 完成后对老年代进行压缩 ， 执行一次空间碎片整理 ，但是空间碎片整理阶段也会引发  `STW`。为了减少 STW 次数， CMS 还可以通过配置`-XX :+CMSFullGCsBeforeCompaction=n` 参数， `在执行了 n 次 FGC 后， JVM 再在老年代执行空间碎片整理。`
 
-​    ![0](https://i.loli.net/2021/10/13/ODBeyGEQIZrWujx.png)
+![0](https://i.loli.net/2021/10/13/ODBeyGEQIZrWujx.png)
+
+
+
+
+
 
 ## 2.4 反射
 
@@ -1071,6 +1260,62 @@ CMS（Concurrent Mark Sweep）收集器是一种以 `获取最短回收停顿时
 # 4. 数据库
 
 ## 4.1 Oracle
+
+### SQL执行
+
+系统全局内存区域（system global area，SGA）/进程共享内存区域（process global area，PGA）
+
+重点讲解：共享池中的库高速缓存和数据库高速缓存
+
+![0](https://i.loli.net/2021/10/23/X9kxlTISvmVNaqM.png)
+
+ **SGA-共享池**
+
+- 在库高速缓存中存储解析过的SQL语句，同样的SQL语句只会被解析一次。
+
+​    ![0](https://i.loli.net/2021/10/23/I6RqBplUoAfOkGW.png)
+
+- 共享池的内存区域对已经加载过的SQL语句执行淘汰算法：LRU/FIFO（基本思想是保留最频繁的以及最近使用的语句）/LFU
+- 高效利用共享池，SQL语句尽量共享。
+
+​    ![0](https://i.loli.net/2021/10/23/TthPFoWcKXlBqbY.png)
+
+**2.3 库高速缓存（保存已经解析过的语句的区域）**
+
+- 解析包括：语法/检验提及的对象/确认该对象的用户权限；
+- 解析通过后，验证该语句之前是否执行过。
+- 软解析：已经存在，取回现有解析信息并重用
+- 硬解析：不存在，完成所有的解析工作，并存于缓存中以便将来重用
+
+​    ![0](https://i.loli.net/2021/10/23/mxY8FTOoGB2VIzt.png)
+
+- 软解析比硬解析花费更少的时间
+
+​    ![0](https://i.loli.net/2021/10/23/SJsMNX3Y5xOfGCw.png)
+
+
+
+
+
+- 主要步骤：解析，（读取绑定变量值），执行，提取
+
+​    ![0](https://i.loli.net/2021/10/23/rzEqVlvsaWKgiOD.png)
+
+   
+
+ 
+
+![0](https://i.loli.net/2021/10/23/XJPlwK9rGLCWgbq.png)
+
+
+
+
+
+
+
+
+
+
 
 ### SQL基础 左右连接
 
@@ -1176,23 +1421,43 @@ cat /var/log/mysql/slow.log
 > hash
 
 1. 常用命令： hset、hmset、hexists、hget、hgetall、hkeys、hvals 等。
+
 2. 应用场景: 系统中对象数据的存储。
+
+3. 底层存储结构，ziplist（压缩列表）与 hashtable（哈希表）。当hash对象可以同时满足一下两个条件时，哈希对象使用ziplist编码。
+
+   - 哈希对象保存的所有键值对的键和值的字符串长度都小于64字节
+
+   - 哈希对象保存的键值对数量小于512个
+
+   当不满足上述要求时，则使用 hashtable 结构。
+
+4. 
 
 > 无序集合set：
 
 1. 常用命令：sadd、spop、smembers、sismember、scard、sinterstore、sunion 等。
+
 2. 应用场景：需要存放的数据不能重复以及需要获取多个数据源交集和并集等场景：全局去重，计算共同喜好，全部喜好，独有喜好。
+
+3. 底层存储结构，分别是 intset（整型数组）与 hashtable（哈希表）。当 set 存储的数据满足以下要求时，使用 intset 结构：
+
+   - 集合内保存的所有成员都是整数值；
+   - 集合内保存的成员数量小于 512 个。
+
+   当不满足上述要求时，则使用 hashtable 结构。
 
 > 有序集合zset：TopN操作。
 
 1. 常用命令： zadd、zcard、zscore、zrange、zrevrange、zrem 等。
 2. 应用场景： 需要对数据根据某个权重进行排序的场景。`比如在直播系统中，实时排行信息包含直播间在线用户列表，各种礼物排行榜，弹幕消息`（可以理解为按消息维度的消息排行榜）等信息。
+3. 存储结构，分别是 zipList（压缩列表）和 skipList（跳跃列表），当 zset 满足以下条件时使用压缩列表：
+   - 集合内保存的成员的数量小于128 个；
+   - 每个 member （成员）的字符串长度都小于 64 个字节。
 
 ### 过期策略和内存淘汰策略
 
 核心思想：`Redis过期键删除策略：定期删除（每隔XXXs随机取数，检查是否key过期）+惰性删除（获取Key检查是否过期）+内存达到最大值后，内存淘汰策略（调用内存allkeys-lru）`
-
-
 
 - 命令行设置
 
@@ -1796,11 +2061,15 @@ public class AccountServiceImpl  {
 }
 ```
 
+核心思想：`方法是否回滚取决是否在同一个事务中`。
+
+
+
 REQUIRED：如果当前存在事务，则加入当前事务；不存在，创建新事务
 
 REQUIRES_NEW：重新创建新的事务
 
-NESTED：
+NESTED：外部事务有问题，嵌套的子事务也会回滚（`类比于REQUIRED`）。外部方法的内部方法的子事务有问题不影响外部方法的事务（`类比于REQUIRES_NEW`）。
 
 MANDATORY/NEVER：必须需要事务/必须不要事务，没有就抛出异常
 
@@ -1810,11 +2079,17 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务（`不支持事
 
 同一类中自调用方法，没有事务注解的方法调用有事务注解的方法，会使有事务注解的方法失效。
 
+
+
 #### 事务隔离级别
 
-- 读取未提交（Read Uncommitted）：事务可以读取未提交的数据，也称作脏读（Dirty Read）。一般很少使用。
-- 读取已提交（Read Committed）：是大都是 DBMS （如：Oracle， SQLServer）默认事务隔离。执行两次同意的查询却有不同的结果，也叫不可重复读。
-- 可重复读（Repeatable Read）：是 MySQL 默认事务隔离级别。能确保同一事务多次读取同一数据的结果是一致的。可以解决脏读的问题，但理论上无法解决幻读（Phantom Read）的问题。
+未提交（脏读） -》 已提交（不可重复读Update） -》 重复读（幻读Insert Delete） -》 串行化（不支持高并发）
+
+
+
+- 读取未提交（Read Uncommitted）：事务可以读取未提交的数据，也称作`脏读（Dirty Read）`。一般很少使用。
+- 读取已提交（Read Committed）：是 DBMS （如：Oracle， SQLServer）默认事务隔离。执行两次相同的查询却有不同的结果，也叫`不可重复读`。
+- 可重复读（Repeatable Read）：是 MySQL 默认事务隔离级别。能确保同一事务多次读取同一数据的结果是一致的。可以解决脏读的问题，但理论上无法解决`幻读（Phantom Read）`的问题。
 - 可串行化（Serializable）：是最高的隔离级别。强制事务串行执行，会在读取的每一行数据上加锁，这样虽然能避免幻读的问题，但也可能导致大量的超时和锁争用的问题。很少会应用到这种级别，只有在非常需要确保数据的一致性且可以接受没有并发的应用场景下才会考虑。
 
 | solation Level   | 脏读可能性（Dirty Read） | 不可重复读可能性（Non Repeatable Read） | 幻读可能性（Phantom Read） |
@@ -1826,9 +2101,11 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务（`不支持事
 
 > 脏读/不可重复读/幻读
 
-- 脏读：读取其他事务还没提交的数据。
-- 不可重复读：同一条数据两次查询有不同的结果，因为其它事务可能在UPDATE操作。
-- 幻读：事务 B 根据条件查询到了 N 条数据，但这时事务 A， INSERT或 DELETE了 M 条符合事务 B 查询条件的数据。事务 B 再次查询结果就和上一次不一致了，得到了 N+M 条数据。
+- 脏读：读取其他事务还没提交的数据
+
+- 不可重复读：同一查询条件，两次查询结果不一致，其他事务对它进行`UPDATE`操作。
+
+- 幻读：同一查询条件，两次查询结果不一致，其他事务对这笔数据进行 `INSERT` 或 `DELETE` 操作。
 
 ### Spring 单例Bean的线程安全问题
 
@@ -3102,10 +3379,6 @@ Raft协议
 
 数据都是分布式存储的，每个Topic的数据都会分布在不同的 Broker 中，如果需要存储更多的数据，只需要增加 Master Broker 就可以了。
 
-
-
-
-
 ### 未提问内容
 
 
@@ -3923,7 +4196,7 @@ import org.springframework.web.client.RestTemplate;
 String forObject = restTemplate.getForObject("http://localhost:9013/communication/hello", String.class);
 ```
 
-##### 微服务Spring Boot
+##### 微服务Spring Boot-2.1.4.RELEASE
 
 单体 -》 SOA -》 微服务Spring Boot /Spring Clound Dubbo
 微服务使用spring boot搭建。
@@ -4104,7 +4377,7 @@ public class GatewayBootstrap {
 
 
 
-##### 缓存Redis
+##### 缓存Redis-2.1.3
 
 > 数据库和缓存双写的一致性问题
 
@@ -4145,7 +4418,7 @@ redisTemplate.opsForXXX().set(key, value, timeout)
 
 
 
-##### 消息队列 RocketMQ
+##### 消息队列 RocketMQ-2.0.2
 
 商品审核通过后，商品服务使用消息队列RocketMQ通知商品详情页服务实现商品页面静态化，以此减少访问数据、服务器压力
 
