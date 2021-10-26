@@ -182,63 +182,6 @@ List list = Collections.synchronizedList(new LinkedList(...));
 
 `线程安全问题`：`链表头节点存储元素` 统计存放元素`++size`，ABA，原来的A已经不是原来的A，通过concurrentHashMap解决线程安全的问题。
 
-> ConcurrentHashMap
-
-
-
-`线程安全ConcurrentHashMap`：通过 `Synchronized` 与 `Unsafe的CAS方法` 共同完成线程安全操作。`设置节点`，`复制节点`到扩张后的table时采用Synchronized同步机制。`获得阈值SizeCtl` 或 `某个节点`时采用Unsafe的CAS方法；扩容方法 `tryPresize`；添加元素时，检测到某个元素的hash为MOVED，帮助数组扩容 `helpTransfer`；
-
-
-
-ConcurrentHashMap 选择了与 HashMap 相同的Node数组+链表+红黑树结构；在锁的实现上，抛弃了原有的 Segment 分段锁，采用CAS + synchronized实现更加细粒度的锁。
-
-将锁的级别控制在了更细粒度的哈希桶数组元素级别，也就是说只需要锁住这个链表头节点（红黑树的根节点），就不会影响其他的哈希桶数组元素的读写，大大提高了并发度。
-
-存取的过程：
-
-1. 根据 key 计算出 hash 值；
-
-2. 判断是否需要进行初始化；
-
-3. 定位到 Node，拿到首节点 f，判断首节点 f：
-
-   1. 如果为 null ，则通过 Unsafe.CAS 的方式尝试添加；
-
-   2. 如果为 f.hash = MOVED = -1 ，说明其他线程在扩容，参与一起扩容HelpTransfer；
-
-   3. 如果都不满足 ，synchronized 锁住 f 节点，判断是链表还是红黑树，遍历插入；
-
-4. 当在链表长度达到 8 ，数组容量小于64的时候，数组扩容；数组容量大于64的时候，将链表转换为红黑树。
-   
-
-get的过程：
-
-1. 根据 key 计算出 hash 值，判断数组是否为空；
-2. 如果是首节点，就直接返回；
-3. 如果是[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)结构，就从[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)里面查询；
-4. 如果是[链表](https://blog.csdn.net/jump/super-jump/word?word=链表)结构，循环遍历判断。
-
-> ConcurrentHashMap 的 get 方法是否要加锁，为什么？★★★
-
-get 方法不需要加锁。因为 Node 的元素 value 和指针 next 是用 volatile 修饰的，在多线程环境下线程A修改节点的 value 或者新增节点的时候是对线程B可见的。
-
-```java
-volatile V val;
-volatile Node<K,V> next;
-```
-
-
-
-> get 方法不需要加锁与 volatile 修饰的哈希桶数组有关吗？★★★
-
-没有关系。哈希桶数组table用 volatile 修饰主要是保证在数组扩容的时候保证可见性。
-
-```java
-transient volatile Node<K,V>[] table;
-```
-
-
-
 ​       ![0](https://i.loli.net/2021/10/12/Rygi1XrvnaodOKI.png)
 
 
@@ -263,7 +206,59 @@ transient volatile Node<K,V>[] table;
 - 数组的容量总是为2的N次方数，tableSizeFor()
 - 扩容后，低位链表元素的放在原来位置，高位元素位置=原位置+原数组容量。
 
-##### 红黑树
+#### ConcurrentHashMap
+
+`线程安全ConcurrentHashMap`：通过 `Synchronized` 与 `Unsafe的CAS方法` 共同完成线程安全操作。`设置节点`，`复制节点`到扩张后的table时采用Synchronized同步机制。`获得阈值SizeCtl` 或 `某个节点`时采用Unsafe的CAS方法；扩容方法 `tryPresize`；添加元素时，检测到某个元素的hash为MOVED，帮助数组扩容 `helpTransfer`；
+
+
+
+ConcurrentHashMap 选择了与 HashMap 相同的Node数组+链表+红黑树结构；在锁的实现上，抛弃了原有的 Segment 分段锁，采用CAS + synchronized实现更加细粒度的锁。
+
+将锁的级别控制在了更细粒度的哈希桶数组元素级别，也就是说只需要锁住这个链表头节点（红黑树的根节点），就不会影响其他的哈希桶数组元素的读写，大大提高了并发度。
+
+存取的过程：
+
+1. 根据 key 计算出 hash 值；
+
+2. 判断是否需要进行初始化；
+
+3. 定位到 Node，拿到首节点 f，判断首节点 f：
+
+   1. 如果为 null ，则通过 Unsafe.CAS 的方式尝试添加；
+
+   2. 如果为 f.hash = MOVED = -1 ，说明其他线程在扩容，参与一起扩容HelpTransfer；
+
+   3. 如果都不满足 ，synchronized 锁住 f 节点，判断是链表还是红黑树，遍历插入；
+
+4. 当在链表长度达到 8 ，数组容量小于64的时候，数组扩容；数组容量大于64的时候，将链表转换为红黑树。
+
+get的过程：
+
+1. 根据 key 计算出 hash 值，判断数组是否为空；
+2. 如果是首节点，就直接返回；
+3. 如果是[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)结构，就从[红黑树](https://blog.csdn.net/jump/super-jump/word?word=红黑树)里面查询；
+4. 如果是[链表](https://blog.csdn.net/jump/super-jump/word?word=链表)结构，循环遍历判断。
+
+> ConcurrentHashMap 的 get 方法是否要加锁，为什么？★★★
+
+get 方法不需要加锁。因为 Node 的元素 value 和指针 next 是用 volatile 修饰的，在多线程环境下线程A修改节点的 value 或者新增节点的时候是对线程B可见的。
+
+```java
+volatile V val;
+volatile Node<K,V> next;
+```
+
+> get 方法不需要加锁与 volatile 修饰的哈希桶数组有关吗？★★★
+
+没有关系。哈希桶数组table用 volatile 修饰主要是保证在数组扩容的时候保证可见性。
+
+```java
+transient volatile Node<K,V>[] table;
+```
+
+
+
+#### 红黑树
 
 红黑树是解决二叉查找树的顶端优势的解决方案，根据三个原则：`这个树由红色和黑色组成，树的根元素是黑色，不允许相邻节点颜色为红色` ，产生了 `重新着色recolor` 和 `旋转rotation` 策略。
 
@@ -347,12 +342,130 @@ transient volatile Node<K,V>[] table;
       3.2 如果 X 的 uncle (叔叔) 是黑色，我们要分四种情况处理
 
       - 3.2.1 左左 (P 是 G 的左孩子，并且 X 是 P 的左孩子)  -》 拉起P，交换 P 和 P的父节点颜色
-
-      - 3.2.2 左右 (P 是 G 的左孩子，并且 X 是 P 的右孩子)  -》 左旋 再按照左左规则
-
+   - 3.2.2 左右 (P 是 G 的左孩子，并且 X 是 P 的右孩子)  -》 左旋 再按照左左规则
       - 3.2.3 右右 (和 3.2.1 镜像过来，恰好相反)  -》 拉起P，交换 P 和 P的父节点颜色
+   - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
 
-      - 3.2.4 右左 (和 3.2.2 镜像过来，恰好相反)  -》 右旋 再按照右右规则
+
+
+## 异常
+
+![image-20211025223153423](https://i.loli.net/2021/10/25/nYx7FIZSdEvmaRh.png)
+
+
+
+### 何为异常
+
+程序运行时，发生的不被期望的事件，它阻止了程序按照程序员的预期正常执行，这就是`异常`。
+
+### 异常关键字
+
+- **try：**用于监听try代码是否抛出异常。
+- **catch：**用于捕获try语句快发生的异常。
+- **finally：**finally语句块总是会被执行。它主要用于回收在try块里打开的物力资源(如数据库连接、网络连接和磁盘文件)。
+- **throw：**用于抛出异常。
+- **throws ：**用在方法签名中声明该方法可能抛出的异常，异常交给调用者处理。
+
+### 异常类型
+
+- Error:  Java虚拟机无法解决的严重问题。如：JVM系统内部错误、资源耗尽等严重情况。一般不编写针对性的代码进行处理。
+
+- Exception: 其它因编程错误或偶然的外在因素导致的一般性问题，可以使用针对性的代码进行处理。例如：空指针访问、试图读取不存在的文件、网络连接中断
+  - 运行时异常 UnCheckException：是指编译器不要求强制处置的异常。一般是指编程时的逻辑错误，是程序员应该积极避免其出现的异常。如：继承RuntimeException的异常、IndexOutOfBoundsException、IllegalArgument、NullpointerException、ClassCastException
+  - 编译时异常 CheckException：是指编译器要求必须处置的异常。即程序在运行时由于外界因素造成的一般性异常。编译器要求java程序必须捕获或声明所有编译时异常。如：SQLException、IOException、ClassNotfoundException
+
+### 异常处理机制
+
+```java
+try{   
+......    // 可能产生异常的代码
+}catch( ExceptionName1 e ){
+   ......    // 当产生ExceptionName1型异常时的处置措施
+}catch( ExceptionName2 e ){
+    ......     // 当产生ExceptionName2型异常时的处置措施
+} 
+[ finally{
+......     //无论是否发生异常，都无条件执行的语句      
+ }  ]
+```
+
+### 创建自定义异常类
+
+继承RuntimeException类，表明这个类是运行时异常，不受编译器检查。
+
+```java
+public class BusinessException extends RuntimeException {
+
+    private ErrorCode errorCode;
+
+    public BusinessException(ErrorCode errorCode) {
+        super();
+        this.errorCode = errorCode;
+    }
+    public BusinessException() {
+        super();
+    }
+
+    public void setErrorCode(ErrorCode errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
+}
+```
+
+
+
+异常说明枚举类
+
+```java
+public enum CommonErrorCode implements ErrorCode {
+
+   ////////////////////////////////////公用异常编码 //////////////////////////
+   E_100101(100101,"传入参数与接口不匹配"),
+   E_100102(100102,"验证码错误"),
+
+   E_NO_AUTHORITY(999997,"没有访问权限"),
+   CUSTOM(999998,"自定义异常"),
+   /**
+    * 未知错误
+    */
+   UNKNOWN(999999,"未知错误");
+
+   private int code;
+   private String desc;
+
+   @Override
+   public int getCode() {
+      return code;
+   }
+
+   @Override
+   public String getDesc() {
+      return desc;
+   }
+
+   private CommonErrorCode(int code, String desc) {
+      this.code = code;
+      this.desc = desc;
+   }
+
+   public static CommonErrorCode setErrorCode(int code) {
+       for (CommonErrorCode errorCode : CommonErrorCode.values()) {
+           if (errorCode.getCode() == code) {
+               return errorCode;
+           }
+       }
+          return null;
+   }
+}
+```
+
+
+
+
 
 ## Java事件处理机制
 
@@ -554,7 +667,18 @@ public ThreadPoolExecutor(int corePoolSize,
 
 > 线程池的创建方式
 
-- Excutors工具类提供newXXXThreadPool方式创建，`newFixedThreadPool` 、 `newSingleThreadPool`和`newCachedThreadPool`： 允许的请求队列长度为 Integer.MAX_VALUE，可能会堆积大量的请求，从而导致 `OOM`
+- Excutors工具类提供newXXXThreadPool方式创建：
+
+1）`newFixedThreadPool` 和`newSingleThreadPool`允许请求队列长度最大：
+
+允许的请求队列长度为 Integer.MAX_VALUE，队列可能会堆积大量的任务，从而导致 OOM。
+
+2）`newCachedThreadPool` 和 `ScheduledThreadPool`允许的创建线程最大：
+
+允许的创建线程数量为 Integer.MAX_VALUE，可能会创建大量的线程，从而导致 OOM。
+
+
+
 - 使用ThreadPoolExecutor自定义参数创建
 
 ```java
@@ -821,6 +945,51 @@ semaphore.release(); // 让信号量递增+1
 semaphore.acquire(2);  //传参为 2 说明调用 acquire 方法的线程会一直阻塞，直到信号量的计数变为 2 才会返回 。
 ```
 
+### ThreadLocal工作原理
+
+> 简单介绍
+
+- Thread类中有两个变量 threadLocals 和 inheritableThreadLocals ，二者都是ThreadLocal内部类，ThreadLocalMap类似于一个HashMap。
+
+- 每个线程通过访问自己线程内部的 ThreadLocalMap 对象内的 value，避免多线程间的资源共享问题，从而实现线程安全。由于ThreadLocalMap的 Entry 类的 key为 ThreadLocal 的弱引用，而 value 为 强引用，所以当 ThreadLocal 没有被外部强引用的时候，在垃圾回收时，它的key会被清理掉，value保留，造成内存泄漏风险，ThreadcalMap提供了 set()、 getEntry() 、remove() 等方法供 ThreadLocal 调用，ThreadLocal通过调用remove()方法清理掉 key 为 null 的记录。
+
+- ThreadLocal不支持继承性，父线程设置值之后，子线程无法访问。父线程创建子线程的时候，ThreadLocalMap中的构造函数会将 父线程的 inheritableThreadLocals中的变量复制一份到子线程的 inheritableThreadLocals 变量中。
+
+
+
+![image-20211025233915639](https://i.loli.net/2021/10/25/A6EeY1UIrJV7jCu.png)
+
+
+
+[详情查看](https://www.cnblogs.com/fsmly/p/11020641.html)
+
+> 什么是局部变量
+
+线程局部变量是局限于线程内部的变量，属于线程自身所有，不在多个线程间共享。Java提供ThreadLocal类来支持线程局部变量，是一种实现线程安全的方式。但是在管理环境下（如 web 服务器）使用线程局部变量的时候要特别小心，在这种情况下，工作线程的生命周期比任何应用变量的生命周期都要长。任何线程局部变量一旦在工作完成后没有释放，Java 应用就存在内存泄露的风险。
+
+> 使用场景
+
+经典的使用场景是为每个线程分配一个 JDBC 连接 Connection。这样就可以保证每个线程的都在各自的 Connection 上进行数据库的操作，不会出现 A 线程关了 B线程正在使用的 Connection； 还有 Session 管理 等问题。
+
+> ThreadLocal造成内存泄漏的原因?
+
+ThreadLocalMap 中使用的 `key 为 ThreadLocal 的弱引用,而 value 是强引用`。所以，如果 ThreadLocal 没有被外部强引用的情况下，在垃圾回收的时候，key 会被清理掉，而 value 不会被清理掉。这样一来，ThreadLocalMap 中就会出现key为null的Entry。假如我们不做任何措施的话，value 永远无法被GC 回收，这个时候就可能会产生内存泄露。ThreadLocalMap实现中已经考虑了这种情况，在调用 set()、get()、remove() 方法的时候，会清理掉 key 为 null 的记录。使用完 ThreadLocal方法后 最好手动调用remove()方法
+
+
+
+> ThreadLocal内存泄漏解决方案？
+
+- 每次使用完ThreadLocal，都调用它的remove()方法，清除数据。
+
+- 在使用线程池的情况下，没有及时清理ThreadLocal，不仅是内存泄漏的问题，更严重的是可能导致业务逻辑出现问题。所以，使用ThreadLocal就跟加锁完要解锁一样，用完就清理。
+  
+
+> ThreadLocal 不支持继承性
+
+同一个ThreadLocal变量在父线程中被设置值后，在子线程中是获取不到的。（threadLocals中为当前调用线程对应的本地变量，所以二者自然是不能共享的）
+
+InheritableThreadLocal类能提供子线程访问父线程的本地变量的
+
 
 
 ### 未提问内容
@@ -873,13 +1042,11 @@ IO 都是同步阻塞模式，所以需要多线程以实现多任务处理。�
 
 > 可见性(Visibility)
 
-是指当一个线程修改了共享变量的值，其他线程也能够立即得知这个通知。主要操作细节就是修改值后将值同步至主内存(volatile 值使用前都会从主内存刷新)，除了 `volatile 还有 synchronize 和 final 可以保证可见性`。同步块的可见性是由“对一个变量执行 unlock 操作之前，必须先把此变量同步会主内存中( store、write 操作)”这条规则获得。而 final 可见性是指：被 final 修饰的字段在构造器中一旦完成，并且构造器没有把 “this” 的引用传递出去( this 引用逃逸是一件很危险的事情，其他线程有可能通过这个引用访问到“初始化了一半”的对象)，那在其他线程中就能看见 final 字段的值。
+是指当一个线程修改了共享变量的值，其他线程也能够立即得知这个通知。主要操作细节就是修改值后将值同步至主内存(volatile 值使用前都会从主内存刷新)，除了 `volatile 还有 synchronize 和 final 可以保证可见性`。同步块的可见性是由 `对一个变量执行 unlock 操作之前，必须先把此变量同步会主内存中( store、write 操作)` 这条规则获得。而 final 可见性是指：被 final 修饰的字段在构造器中一旦完成，并且构造器没有把 “this” 的引用传递出去( this 引用逃逸是一件很危险的事情，其他线程有可能通过这个引用访问到“初始化了一半”的对象)，那在其他线程中就能看见 final 字段的值。
 
 > 有序性(Ordering)
 
 `Java 语言通过 volatile 和 synchronize 两个关键字来保证线程之间操作的有序性`。volatile 自身就`禁止指令重排`，而 synchronize 则持有同一个锁的两个同步块只能串行的进入。
-
-
 
 > synchronized与volatile的区别？
 
@@ -988,7 +1155,7 @@ IO 都是同步阻塞模式，所以需要多线程以实现多任务处理。�
 
 - 首先查看系统CPU负载情况： `uptime`  `top`，再看jdk进程号 `jps -l`，直接导出hprof文件，再通过 `eclipse MAT`工具分析
 
-- 其次查看大对象情况 `jmap -histo` 以及 查看GC情况 `jstat -gc`
+- 其次查看存活大对象情况 `jmap -histo:live` 以及 查看GC情况 `jstat -gc`
 
 > 详细步骤说明
 
@@ -996,11 +1163,56 @@ IO 都是同步阻塞模式，所以需要多线程以实现多任务处理。�
 - 查看系统CPU负载情况： `uptime`；实时查看系统各个进程占用CPU的情况： `top`
 - 通过jps获取虚拟机进程号：` jps -l`
 - 导出内存使用情况到文件： `jmap -dump:format=b,file=D:\dump\dumpName.hprof [pid]`
-- 查看大对象情况： `jmap -histo [pid] |sort -k 2 -g -r | less`
+- 查看存活大对象情况： `jmap -histo:live [pid] | sort -k 2 -g -r | less`
 - 运行时观察gc情况： `jstat -gc [pid] 间隔秒 循环次数`
 - 分析Dump文件：通过jdk自身的 `visualVm` 或者 `eclipse MAT` 工具分析（疑点-查看线程栈，retainedHeap最大等等）
 
 ​    ![0](https://i.loli.net/2021/10/11/uY1BDpzOPSMjWUH.png)
+
+#### 常见问题排查
+
+参考文章
+
+- [一文学会Java死锁和CPU 100% 问题的排查技巧](https://www.cnblogs.com/aflyun/p/11141369.html)
+
+- [记一次生产环境JAVA服务SYNCHRONIZED死锁的处理过程](https://www.freesion.com/article/65451353038/)
+  - 通过阿里开源的 `arthas` 工具分析线程：查找进程的阻塞线程有哪些以及它被哪个线程阻塞。定义web容器的最大线程数，连接超时时间，socket超时时间等
+
+##### Java死锁如何排查和解决？
+
+jps -l
+
+jstack -l pid
+
+查看到有死锁发生
+
+![image-20211026081403677](https://i.loli.net/2021/10/26/mOoyDh1MNJERA7q.png)
+
+通过jvisualVm查看
+
+![Java Visual VM](https://i.loli.net/2021/10/26/13MsF9QABz6YNZt.png)
+
+切换到线程栏，检查死锁发生情况
+
+![死锁检测](https://i.loli.net/2021/10/26/NZB5stJxH3z6m7w.png)
+
+
+
+##### 服务器CPU占用率高达到100%排查和解决？
+
+总体目标：获取进程中的CPU占用率最大的线程
+
+使用top命令查看cpu使用情况
+
+再使用jps -l找出与cpu占用量最大相同的pid
+
+找出cpu占用较高的线程TID（转换成16进制），pidstat -p < PID > 1 3 -u -t
+
+查看进程具有的线程jstack pid（查看它的运行状态NEW -》 RUNNABLE -》BLOCKED -》WAITING -》TIMED-WAITING -》 TERMINATED ）
+
+注意⚠️：使用工具快速查看线程使用情况：show-busy-java-threads、阿里-arthas
+
+
 
 #### JVM参数设置
 
@@ -2033,6 +2245,24 @@ Spring内部有三级缓存：
 
 ### Spring事务
 
+#### 事务的基本原理
+
+Spring事务 的本质其实就是数据库对事务的支持，没有数据库的事务支持，spring是无法提供事务功能的。对于纯JDBC操作数据库，想要用到事务，可以按照以下步骤进行：
+
+- 获取连接 Connection con = DriverManager.getConnection()
+
+- 开启事务con.setAutoCommit(true/false);
+
+- 执行CRUD
+
+- 提交事务/回滚事务 con.commit() / con.rollback();
+
+- 关闭连接 conn.close();
+
+使用Spring的事务管理功能后，在相关的类和方法上通过注解@Transactional标识，spring 在启动的时候会去解析生成相关的bean，这时候会查看拥有相关注解的类和方法，并且为这些类和方法生成代理，并根据@Transaction的相关参数进行相关配置注入，这样就在代理中为我们把相关的事务处理掉了（开启正常提交事务，异常回滚事务），于是可以不再写步骤 2 和 4 的代码，
+
+真正的数据库层的事务提交和回滚是通过bin log或者redo log实现的。
+
 #### 事务传播行为
 
 ```java
@@ -2069,7 +2299,7 @@ REQUIRED：如果当前存在事务，则加入当前事务；不存在，创建
 
 REQUIRES_NEW：重新创建新的事务
 
-NESTED：外部事务有问题，嵌套的子事务也会回滚（`类比于REQUIRED`）。外部方法的内部方法的子事务有问题不影响外部方法的事务（`类比于REQUIRES_NEW`）。
+NESTED：如果一个活动的事务存在，则运行在一个嵌套的事务中【外部事务有问题，嵌套的子事务也会回滚（`类比于REQUIRED`）。内部方法的事务有问题不影响外部方法的事务（`类比于REQUIRES_NEW`）】。如果没有活动事务，则按REQUIRED属性执行。
 
 MANDATORY/NEVER：必须需要事务/必须不要事务，没有就抛出异常
 
@@ -2087,19 +2317,21 @@ NOT_SUPPORTED：如果当前存在事务，则挂起当前事务（`不支持事
 
 
 
+| 隔离级别         | 隔离级别的值 | 导致的问题                                                   |
+| ---------------- | ------------ | ------------------------------------------------------------ |
+| Read-Uncommitted | 0            | 导致脏读                                                     |
+| Read-Committed   | 1            | 避免脏读，允许不可重复读和幻读                               |
+| Repeatable-Read  | 2            | 避免脏读、不可重复读，允许幻读                               |
+| Serializable     | 3            | 串行化读，事务只能一个一个执行，<br/>避免了脏读、不可重复读、幻读。执行效率慢，使用时慎重 |
+
+
+
 - 读取未提交（Read Uncommitted）：事务可以读取未提交的数据，也称作`脏读（Dirty Read）`。一般很少使用。
 - 读取已提交（Read Committed）：是 DBMS （如：Oracle， SQLServer）默认事务隔离。执行两次相同的查询却有不同的结果，也叫`不可重复读`。
 - 可重复读（Repeatable Read）：是 MySQL 默认事务隔离级别。能确保同一事务多次读取同一数据的结果是一致的。可以解决脏读的问题，但理论上无法解决`幻读（Phantom Read）`的问题。
-- 可串行化（Serializable）：是最高的隔离级别。强制事务串行执行，会在读取的每一行数据上加锁，这样虽然能避免幻读的问题，但也可能导致大量的超时和锁争用的问题。很少会应用到这种级别，只有在非常需要确保数据的一致性且可以接受没有并发的应用场景下才会考虑。
+- 可串行化（Serializable）：是最高的隔离级别。强制事务串行执行，会在读取的每一行数据上加锁，这样虽然能避免幻读的问题，但也可能导致大量的超时和锁争用的问题。很少会应用到这种级别，只有在非常需要确保数据的一致性且可以接受没有并发的应用场景下才会考虑。脏读/不可重复读/幻读
 
-| solation Level   | 脏读可能性（Dirty Read） | 不可重复读可能性（Non Repeatable Read） | 幻读可能性（Phantom Read） |
-| ---------------- | ------------------------ | --------------------------------------- | -------------------------- |
-| read Uncommitted | Yes                      | Yes                                     | Yes                        |
-| read Committed   | -                        | Yes                                     | Yes                        |
-| repeatable Read  | -                        | -                                       | Yes                        |
-| serializable     | -                        | -                                       | -                          |
-
-> 脏读/不可重复读/幻读
+> 脏读、不可重复读、幻读
 
 - 脏读：读取其他事务还没提交的数据
 
@@ -3398,6 +3630,37 @@ Raft协议
 #### Zookeeper选举机制
 
 ### 未提问内容
+
+## 6.5 Web容器
+
+### Tomcat
+
+- `maxThreads（最大线程数）`：每一次HTTP请求到达Web服务，tomcat都会创建一个线程来处理该请求，那么最大线程数决定了Web服务可以同时处理多少个请求，`默认200`。
+
+- `accepCount（最大等待数）`：当调用Web服务的HTTP请求数达到tomcat的最大线程数时，还有新的HTTP请求到来，这时tomcat会将该请求放在等待队列中，这个acceptCount就是指能够接受的最大等待数，`默认100`。如果等待队列也被放满了，这个时候再来新的请求就会被tomcat拒绝（connection refused）。
+
+- `maxConnections（最大连接数）`：这个参数是指在同一时间，tomcat能够接受的最大连接数。一般这个值要大于`maxThreads+acceptCount`。
+
+>  在配置文件中添加如下内容
+
+```xml
+# tomcat最大线程数，默认为200
+server.tomcat.max-threads=200
+# tomcat最大连接数，默认为10000（网上的说法）
+server.tomcat.max-connections=300
+```
+
+[实践案例](https://www.jianshu.com/p/35878d4ec130)
+
+并发请求数 <= tomcat最大线程数200，可以看到200个请求,响应结果正常
+
+并发数(201) >tomcat最大线程数200。可以看到，因为tomcat最大的线程数为200,201的并发请求量，超出了并发处理的数量200，多出来的1个请求，需要等待某个处理中的请求处理完成
+
+请求数超过最大连接数300，可以看到有大量的没有正常响应的http请求，原因很简单，因为超过了tomcat设置的最大连接数，服务器拒绝了该次请求的连接
+
+线程数的经验值为：1核2G内存， 线程数经验值为200；4核8G内存，线程数经验值为800
+
+
 
 ## 未提问内容
 
